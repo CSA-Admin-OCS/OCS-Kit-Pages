@@ -1,0 +1,7 @@
+# School options for the profile page "High School" dropdown.
+# Used when `kit.schools` in _config.yml is empty.
+# Each entry: name (stored value) and optional label (shown in the dropdown).
+# `kit.schools` in _config.yml may instead be a plain list of names.
+schools:
+  - name: "Example High School"
+    label: "Example High"

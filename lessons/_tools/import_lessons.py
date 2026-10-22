@@ -417,7 +417,7 @@ def build(upstream):
             if fm.get("permalink"):
                 old_to_new[str(fm["permalink"]).rstrip("/")] = permalink
             all_items.append(dict(course=course, cfg=cfg, idx=idx, src=src, slug=slug, unit=unit, kind=kind,
-                                  title=title, desc=desc, nb=nb, fm=fm, permalink=permalink))
+                                  title=re.sub(r":\s+", " - ", title) if title else title, desc=desc, nb=nb, fm=fm, permalink=permalink))
     # known upstream aliases
     old_to_new.update({
         "/csa/unit_01/1_10/homework": "/lessons/java/1-10-class-methods-homework/",
@@ -450,6 +450,11 @@ def build(upstream):
             desc = apply_replacements(re.sub(r"\s+", " ", desc))
             if not desc or re.search(r"points|\b[A-Z][a-z]+, [A-Z][a-z]+", desc):
                 warnings.append(f"{it['slug']}: weak description {desc!r}")
+            # the notebook converter re-emits front matter without quoting, so keep values colon-free
+            nocolon = lambda v: re.sub(r":\s+", " - ", v).replace("#", "")
+            title, desc = nocolon(title), nocolon(desc)
+            it["title"] = title
+            unit = nocolon(it["unit"])
             new_fm = {
                 "layout": "post",
                 "title": title,
@@ -460,7 +465,7 @@ def build(upstream):
                 "toc": True,
                 "permalink": it["permalink"],
                 "lesson_course": course,
-                "lesson_unit": it["unit"],
+                "lesson_unit": unit,
                 "lesson_order": pos + 1,
                 "lesson_kind": it["kind"],
             }

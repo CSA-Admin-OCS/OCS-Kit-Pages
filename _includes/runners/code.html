@@ -1,3 +1,10 @@
+{%- comment -%} Kit: when code-runner is off this runner degrades to a read-only code block. {%- endcomment -%}
+{%- if site.data.kit.disabled contains 'code-runner' -%}
+<div class="runner-disabled" data-feature="code-runner">
+{%- if include.challenge %}<p>{{ include.challenge }}</p>{% endif %}
+<pre><code>{{ include.code | escape }}</code></pre>
+</div>
+{%- else -%}
 <!-- Reusable Code Runner Component -->
 <div class="code-runner-container"
   id="runner-{{ include.runner_id }}"
@@ -241,3 +248,4 @@ import { pythonURI, javaURI, fetchOptions } from '{{site.baseurl}}/assets/js/api
   }
 })();
 </script>
+{%- endif -%}

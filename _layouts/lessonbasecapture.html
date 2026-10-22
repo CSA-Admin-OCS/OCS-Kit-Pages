@@ -199,11 +199,11 @@ layout: opencs
     </div>
     {% endif %}
     
-    {% if page.enable_ai_grading %}
+    {% if page.enable_ai_grading %}{% unless site.data.kit.disabled contains 'ai-grading' %}
       <!-- AI grading is not bundled with the kit. Gemini calls must go through the
            Flask backend proxy (POST /api/gemini) so no API key ships in the frontend. -->
-      <p class="ai-grading-status"><em>AI assistant not configured.</em></p>
-    {% endif %}
+      <p class="ai-grading-status" data-feature="ai-grading"><em>AI assistant not configured.</em></p>
+    {% endunless %}{% endif %}
 
     {% if page.resources %}
     <hr>

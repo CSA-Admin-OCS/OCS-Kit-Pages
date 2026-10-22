@@ -1,3 +1,4 @@
+{%- unless site.data.kit.disabled contains 'assignments' -%}
 <!-- 
   Challenge Submit Button - Submit a SINGLE challenge from a code runner
   
@@ -176,3 +177,4 @@ import { javaURI, fetchOptions } from '{{site.baseurl}}/assets/js/api/config.js'
   submitBtn.addEventListener('click', submitChallenge);
 })();
 </script>
+{%- endunless -%}

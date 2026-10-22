@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     : ''
                             }
                             <a href="${baseurl}/profile">Profile</a>
+                            <a href="${baseurl}/admin" data-feature-admin>Admin</a>
                             <a href="${baseurl}/logout">Logout</a>
                         </div>
                     </div>
@@ -50,6 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // User is not authenticated, then "Login" link is shown
                 loginArea.innerHTML = `<a href="${baseurl}/login">Login</a>`;
             }
+            // Tell the kit runtime who is signed in (shows data-feature-admin items to Admins)
+            document.dispatchEvent(new CustomEvent('ocs:user', { detail: data || null }));
             // Set loginArea opacity to 1
             loginArea.style.opacity = "1";
         })

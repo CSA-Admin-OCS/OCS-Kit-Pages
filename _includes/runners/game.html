@@ -1,3 +1,10 @@
+{%- comment -%} Kit: when game-engine is off this runner degrades to a read-only code block. {%- endcomment -%}
+{%- if site.data.kit.disabled contains 'game-engine' -%}
+<div class="runner-disabled" data-feature="game-engine">
+{%- if include.challenge %}<p>{{ include.challenge }}</p>{% endif %}
+<pre><code>{{ include.code | escape }}</code></pre>
+</div>
+{%- else -%}
 <!-- Reusable Game Runner Component -->
 <div class="game-runner-container{% if include.hide_edit == 'true' %} hide-editor{% endif %}" id="game-runner-{{ include.runner_id }}" data-storage-key="{{ page.permalink | replace: '/', '_' }}_{{ include.runner_id }}"
   {% if include.width or include.height or include.editor_height %}
@@ -210,3 +217,4 @@ import { BaseRunner, GameExecutor } from '{{ site.baseurl }}/assets/js/pages/run
 
 })();
 </script>
+{%- endif -%}

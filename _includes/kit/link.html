@@ -1,0 +1,10 @@
+{%- comment -%}
+  A site link that disappears when its feature is turned off by the kit, and carries
+  data-feature so assets/js/kit-features.js can also hide it when an admin disables
+  the feature at runtime.
+  Usage: {% include kit/link.html url="/snake" text="Snake" class="ocs__btn pill" %}
+{%- endcomment -%}
+{%- include kit/url-feature.html url=include.url -%}
+{%- unless kit_off -%}
+<a href="{{ site.baseurl }}{{ include.url }}"{% if include.class %} class="{{ include.class }}"{% endif %}{% if kit_feature != "" %} data-feature="{{ kit_feature }}"{% endif %}>{{ include.text }}</a>
+{%- endunless -%}

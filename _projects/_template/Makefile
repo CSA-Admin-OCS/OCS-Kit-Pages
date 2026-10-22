@@ -52,39 +52,38 @@ assets:
 		for file in navigation/*.md; do \
 			[ -f "$$file" ] || continue; \
 			filename=$$(basename "$$file"); \
-			cp "$$file" "$(DOCS_DEST)/$(NAVIGATION_DATE)-$$filename"; \
+			cp -p "$$file" "$(DOCS_DEST)/$(NAVIGATION_DATE)-$$filename"; \
 		done; \
 		for file in navigation/*.html; do \
 			[ -f "$$file" ] || continue; \
-			cp "$$file" "$(INCLUDES_DEST)/$$(basename "$$file")"; \
+			cp -p "$$file" "$(INCLUDES_DEST)/$$(basename "$$file")"; \
 		done; \
 		for file in navigation/*.ipynb; do \
 			[ -f "$$file" ] || continue; \
 			filename=$$(basename "$$file"); \
-			cp "$$file" "$(NOTEBOOK_DEST)/$(NAVIGATION_DATE)-$$filename"; \
+			cp -p "$$file" "$(NOTEBOOK_DEST)/$(NAVIGATION_DATE)-$$filename"; \
 		done; \
 	fi
-	@if [ -d "levels" ]; then mkdir -p $(JS_DEST)/levels; cp levels/*.js $(JS_DEST)/levels/ 2>/dev/null || true; fi
-	@if [ -d "model" ]; then mkdir -p $(JS_DEST)/model; cp model/*.js $(JS_DEST)/model/ 2>/dev/null || true; fi
-	@if [ -d "services" ]; then mkdir -p $(JS_DEST)/services; cp services/*.js $(JS_DEST)/services/ 2>/dev/null || true; fi
-	@if [ -d "data" ]; then mkdir -p $(JS_DEST)/data; cp data/*.js $(JS_DEST)/data/ 2>/dev/null || true; fi
+	@if [ -d "levels" ]; then mkdir -p $(JS_DEST)/levels; cp -p levels/*.js $(JS_DEST)/levels/ 2>/dev/null || true; fi
+	@if [ -d "model" ]; then mkdir -p $(JS_DEST)/model; cp -p model/*.js $(JS_DEST)/model/ 2>/dev/null || true; fi
+	@if [ -d "services" ]; then mkdir -p $(JS_DEST)/services; cp -p services/*.js $(JS_DEST)/services/ 2>/dev/null || true; fi
+	@if [ -d "data" ]; then mkdir -p $(JS_DEST)/data; cp -p data/*.js $(JS_DEST)/data/ 2>/dev/null || true; fi
 	@
 	@# General JS parsing
-	@if [ -d "js" ]; then mkdir -p $(JS_DEST); cp -r js/* $(JS_DEST)/ 2>/dev/null || true; fi
+	@if [ -d "js" ]; then mkdir -p $(JS_DEST); cp -rp js/* $(JS_DEST)/ 2>/dev/null || true; fi
 	@
 	@# Images
-	@if [ -d "images" ]; then mkdir -p $(IMAGES_DEST); cp -r images/* $(IMAGES_DEST)/ 2>/dev/null || true; fi
-	@if [ -f "favicon.png" ]; then mkdir -p $(IMAGES_DEST); cp favicon.png $(IMAGES_DEST)/favicon.png; fi
+	@if [ -d "images" ]; then mkdir -p $(IMAGES_DEST); cp -rp images/* $(IMAGES_DEST)/ 2>/dev/null || true; fi
+	@if [ -f "favicon.png" ]; then mkdir -p $(IMAGES_DEST); cp -p favicon.png $(IMAGES_DEST)/favicon.png; fi
 	@
 	@# Native Jekyll SASS processing
 	@if [ -d "sass" ]; then \
 		mkdir -p $(SASS_DEST); \
-		cp -r sass/* $(SASS_DEST)/ 2>/dev/null || true; \
+		cp -rp sass/* $(SASS_DEST)/ 2>/dev/null || true; \
 		if [ -f "$(SASS_DEST)/main.scss" ]; then \
 			mkdir -p $(CSS_DEST); \
-			echo "---" > $(CSS_DEST)/main.scss; \
-			echo "---" >> $(CSS_DEST)/main.scss; \
-			echo "@import \"projects/$(PROJECT_NAME)/main\";" >> $(CSS_DEST)/main.scss; \
+			printf -- '---\n---\n@import "projects/$(PROJECT_NAME)/main";\n' > $(CSS_DEST)/main.scss.tmp; \
+			cmp -s $(CSS_DEST)/main.scss.tmp $(CSS_DEST)/main.scss && rm -f $(CSS_DEST)/main.scss.tmp || mv $(CSS_DEST)/main.scss.tmp $(CSS_DEST)/main.scss; \
 		fi; \
 	fi
 
@@ -97,11 +96,11 @@ index: assets
 	fi
 	@if [ -f "index.ipynb" ]; then \
 		mkdir -p $(NOTEBOOK_DEST); \
-		cp index.ipynb $(NOTEBOOK_DEST)/$(NOTEBOOK_FILENAME) 2>/dev/null || true; \
+		cp -p index.ipynb $(NOTEBOOK_DEST)/$(NOTEBOOK_FILENAME) 2>/dev/null || true; \
 		touch /tmp/.jekyll_rebuild_trigger 2>/dev/null || true; \
 	elif [ -f "index.md" ]; then \
 		mkdir -p $(WORKSPACE_ROOT)/_posts/projects; \
-		cp index.md $(WORKSPACE_ROOT)/_posts/projects/$(MARKDOWN_FILENAME) 2>/dev/null || true; \
+		cp -p index.md $(WORKSPACE_ROOT)/_posts/projects/$(MARKDOWN_FILENAME) 2>/dev/null || true; \
 		touch /tmp/.jekyll_rebuild_trigger 2>/dev/null || true; \
 	fi
 
@@ -137,7 +136,7 @@ watch:
 		if [ -f "$(PROJECT_SRC)/index.ipynb" ] && [ "$(PROJECT_SRC)/index.ipynb" -nt /tmp/.project_$(PROJECT_NAME)_marker ]; then \
 			echo "  🔄 Notebook changed - copying and converting..."; \
 			mkdir -p $(NOTEBOOK_DEST); \
-			cp $(PROJECT_SRC)/index.ipynb $(NOTEBOOK_DEST)/$(NOTEBOOK_FILENAME) 2>/dev/null || true; \
+			cp -p $(PROJECT_SRC)/index.ipynb $(NOTEBOOK_DEST)/$(NOTEBOOK_FILENAME) 2>/dev/null || true; \
 			cd $(WORKSPACE_ROOT) && make convert-single NOTEBOOK_FILE="$(NOTEBOOK_DEST)/$(NOTEBOOK_FILENAME)" 2>&1; \
 			changed=1; \
 		fi; \
@@ -196,7 +195,7 @@ docs:
 		for doc in docs/*.md docs/*.html; do \
 			if [ -f "$$doc" ]; then \
 				filename=$$(basename "$$doc"); \
-				cp "$$doc" "$(DOCS_DEST)/$(DATE_OF_CREATION)-$(PROJECT_NAME)-$$filename" 2>/dev/null || true; \
+				cp -p "$$doc" "$(DOCS_DEST)/$(DATE_OF_CREATION)-$(PROJECT_NAME)-$$filename" 2>/dev/null || true; \
 			fi; \
 		done; \
 		echo "✓ Documentation published to _posts/projects/$(PROJECT_NAME)/"; \

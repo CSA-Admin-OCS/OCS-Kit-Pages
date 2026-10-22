@@ -2,13 +2,14 @@ HOST ?= localhost
 PORT ?= 4500
 LOG_FILE = /tmp/jekyll$(PORT).log
 PYTHON := venv/bin/python3
+# Extra Jekyll config files layered on top of _config.yml (comma-separated, no spaces)
+JEKYLL_CONFIG ?= _config.yml$(if $(wildcard _config.local.yml),$(comma)_config.local.yml)
+comma := ,
 
 SHELL = /bin/bash -c
 .SHELLFLAGS = -e
 
-NOTEBOOK_FILES := $(shell find _notebooks -name '*.ipynb')
 DESTINATION_DIRECTORY = _posts
-MARKDOWN_FILES := $(patsubst _notebooks/%.ipynb,$(DESTINATION_DIRECTORY)/%_IPYNB_2_.md,$(NOTEBOOK_FILES))
 
 ###########################################
 # Project Selection Logic
@@ -24,6 +25,7 @@ DEV_PROJECTS := $(shell grep -v '^\#' $(PROJECT_FILE) 2>/dev/null | grep -v '^$$
 
 # Known top-level targets (add to this if needed)
 KNOWN_TARGETS := \
+	convert-notebooks \
 	default dev serve build clean stop reload refresh help \
 	serve-minima serve-cayman serve-yat serve-so-simple serve-hydejack \
 	build-minima build-cayman build-yat build-so-simple \
@@ -68,7 +70,7 @@ ACTIVE_DEV_PROJECTS = $(sort $(DEV_PROJECTS) $(VALID_EXTRA_PROJECTS))
 define run_projects
 	@for proj in $(1); do \
 		if [ -d "_projects/$$proj" ]; then \
-			if [ ! -f "_projects/$$proj/Makefile" ]; then \
+			if [ ! -f "_projects/$$proj/Makefile" ] || [ "_projects/_template/Makefile" -nt "_projects/$$proj/Makefile" ]; then \
 				echo "📋 Generating Makefile for $$proj (from template)"; \
 				cp "_projects/_template/Makefile" "_projects/$$proj/Makefile"; \
 			fi; \
@@ -265,7 +267,7 @@ build-current: clean convert split-courses
 	@echo "Generating dynamic SASS imports..."
 	@$(PYTHON) scripts/generate_sass_imports.py 2>&1 || echo "⚠️  SASS import generation failed"
 	@bundle exec jekyll clean
-	@bundle exec jekyll build
+	@bundle exec jekyll build --config $(JEKYLL_CONFIG)
 
 # General serve/build for whatever is current
 serve: serve-current
@@ -281,10 +283,13 @@ clean-courses:
 	@python3 scripts/split_multi_course_files.py clean
 
 # Notebook and DOCX conversion
-convert: $(MARKDOWN_FILES) convert-docx
+# One converter run (parallel inside the script) that skips notebooks whose
+# markdown is already newer than the notebook and the converter itself.
+convert: convert-notebooks convert-docx
+convert-notebooks:
+	@$(PYTHON) scripts/convert_notebooks.py --changed
 $(DESTINATION_DIRECTORY)/%_IPYNB_2_.md: _notebooks/%.ipynb
-	@mkdir -p $(@D)
-	@$(PYTHON) -c "from scripts.convert_notebooks import convert_notebooks; convert_notebooks()"
+	@$(PYTHON) scripts/convert_notebooks.py "$<"
 
 # Single notebook conversion (faster for development)
 convert-single:
@@ -389,7 +394,7 @@ watch-rebuild:
 					echo "🔨Rebuilding Jekyll site..."; \
 					START=$$(date +%s); \
 					rm -f /tmp/.jekyll_rebuild_done; \
-					(bundle exec jekyll build --incremental > /tmp/.jekyll_rebuild_log 2>&1; touch /tmp/.jekyll_rebuild_done) & \
+					(bundle exec jekyll build --incremental --config $(JEKYLL_CONFIG) > /tmp/.jekyll_rebuild_log 2>&1; touch /tmp/.jekyll_rebuild_done) & \
 					REBUILD_PID=$$!; \
 					COUNTER=0; \
 					while [ ! -f /tmp/.jekyll_rebuild_done ]; do \
@@ -484,33 +489,34 @@ bundle-install:
 jekyll-serve: bundle-install
 	@touch /tmp/.notebook_watch_marker
 	@rm -f /tmp/.jekyll_rebuild_trigger
-	bundle exec jekyll serve -H $(HOST) -P $(PORT) --no-watch > $(LOG_FILE) 2>&1 &
+	bundle exec jekyll serve -H $(HOST) -P $(PORT) --no-watch --config $(JEKYLL_CONFIG) > $(LOG_FILE) 2>&1 &
 	@make wait-for-server
 
 # Common server wait logic
+# Polls every 0.2s (COUNTER counts ticks; 5 ticks = 1 second)
 wait-for-server:
-	@until [ -f $(LOG_FILE) ]; do sleep 1; done
+	@until [ -f $(LOG_FILE) ]; do sleep 0.2; done
 	@for ((COUNTER = 0; ; COUNTER++)); do \
 		if grep -q "Server address:" $(LOG_FILE); then \
-			echo "Server started in $$COUNTER seconds"; \
+			echo "Server started in $$((COUNTER / 5)) seconds"; \
 			grep "Server address:" $(LOG_FILE); \
 			break; \
 		fi; \
-		if [ $$COUNTER -eq 300 ]; then \
-			echo "Server timed out after $$COUNTER seconds."; \
+		if [ $$COUNTER -eq 1500 ]; then \
+			echo "Server timed out after $$((COUNTER / 5)) seconds."; \
 			echo "Review errors from $(LOG_FILE)."; \
 			cat $(LOG_FILE); \
 			exit 1; \
 		fi; \
-		if [ $$COUNTER -gt 5 ] && grep -E -qi "\bfatal\b|\bexception\b" $(LOG_FILE); then \
+		if [ $$COUNTER -gt 25 ] && grep -E -qi "\bfatal\b|\bexception\b" $(LOG_FILE); then \
 			echo "Fatal error detected during startup!"; \
 			cat $(LOG_FILE); \
 			exit 1; \
 		fi; \
-		if [ $$((COUNTER % 10)) -eq 0 ] && [ $$COUNTER -gt 0 ]; then \
-			echo "Still starting... ($$COUNTER seconds elapsed)"; \
+		if [ $$((COUNTER % 50)) -eq 0 ] && [ $$COUNTER -gt 0 ]; then \
+			echo "Still starting... ($$((COUNTER / 5)) seconds elapsed)"; \
 		fi; \
-		sleep 1; \
+		sleep 0.2; \
 	done
 
 # Single DOCX file conversion (for dev mode)

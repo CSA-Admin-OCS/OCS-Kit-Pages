@@ -117,6 +117,18 @@ def create_course_specific_file(original_path, front_matter, body_content, cours
     print(f"✓ Created course-specific file: {course_file_path}")
     return course_file_path
 
+def write_if_changed(path, content):
+    """Write only when content differs, so unchanged files keep their mtime
+    (lets Jekyll's incremental build and `make` skip them)."""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            if f.read() == content:
+                return
+    except OSError:
+        pass
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
 def create_markdown_course_file(original_path, course_file_path, new_front_matter):
     """Create a markdown course-specific file."""
     yaml_content = yaml.dump(new_front_matter, default_flow_style=False, allow_unicode=True)
@@ -127,8 +139,7 @@ def create_markdown_course_file(original_path, course_file_path, new_front_matte
 
 {{% include_relative {content_filename} %}}"""
     
-    with open(course_file_path, 'w', encoding='utf-8') as f:
-        f.write(course_content)
+    write_if_changed(course_file_path, course_content)
 
 def create_notebook_course_file(original_path, course_file_path, new_front_matter, notebook_content):
     """Create a notebook course-specific file."""
@@ -142,8 +153,7 @@ def create_notebook_course_file(original_path, course_file_path, new_front_matte
             notebook['cells'][0]['source'] = [new_front_matter_content]
         
         # Write the modified notebook
-        with open(course_file_path, 'w', encoding='utf-8') as f:
-            json.dump(notebook, f, indent=2)
+        write_if_changed(course_file_path, json.dumps(notebook, indent=2))
             
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error creating notebook course file: {e}")
@@ -156,8 +166,7 @@ def create_content_only_file(original_path, body_content):
         content_file_path = original_path.parent / content_filename
         
         # Write content-only file
-        with open(content_file_path, 'w', encoding='utf-8') as f:
-            f.write(body_content)
+        write_if_changed(content_file_path, body_content)
         
         print(f"✓ Created content file: {content_file_path}")
         return content_file_path

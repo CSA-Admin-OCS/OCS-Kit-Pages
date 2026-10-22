@@ -1,4 +1,27 @@
 import glob
+import os
+import sys
+
+
+def _all_outputs_fresh():
+    """Cheap stdlib-only check for `--changed`: True when every notebook's
+    markdown is newer than the notebook and this script (skips importing nbconvert)."""
+    script_mtime = os.path.getmtime(os.path.abspath(__file__))
+    for nb in glob.glob("_notebooks/**/*.ipynb", recursive=True):
+        out = os.path.join("_posts", os.path.relpath(nb, "_notebooks").replace(".ipynb", "_IPYNB_2_.md"))
+        try:
+            out_mtime = os.path.getmtime(out)
+        except OSError:
+            return False
+        if out_mtime < os.path.getmtime(nb) or out_mtime < script_mtime:
+            return False
+    return True
+
+
+if __name__ == "__main__" and sys.argv[1:] == ["--changed"] and _all_outputs_fresh():
+    print("Notebooks: all up to date")
+    sys.exit(0)
+
 from nbconvert import MarkdownExporter
 from nbconvert.utils.exceptions import ConversionException
 import os
@@ -1314,11 +1337,31 @@ def process_notebook(notebook_file):
         print(f"Unexpected error for {notebook_file}: {traceback.format_exc()}")
 
 
-def convert_notebooks():
-    """Convert all notebooks in parallel while reporting progress."""
+def is_up_to_date(notebook_file):
+    """True when the generated markdown is newer than both the notebook and this converter."""
+    output = get_relative_output_path(notebook_file)
+    if not os.path.exists(output):
+        return False
+    out_mtime = os.path.getmtime(output)
+    return (out_mtime >= os.path.getmtime(notebook_file)
+            and out_mtime >= os.path.getmtime(os.path.abspath(__file__)))
+
+
+def convert_notebooks(only_changed=False):
+    """Convert notebooks in parallel while reporting progress.
+
+    only_changed: skip notebooks whose markdown output is already up to date
+    (used by `make`; CI converts everything from a clean checkout).
+    """
     maxCores = os.cpu_count()  # get the number of cores available on the system
 
     notebook_files = glob.glob(f"{notebook_directory}/**/*.ipynb", recursive=True)
+    total = len(notebook_files)
+    if only_changed:
+        notebook_files = [nb for nb in notebook_files if not is_up_to_date(nb)]
+        print(f"Notebooks: {len(notebook_files)} of {total} need conversion")
+        if not notebook_files:
+            return
 
     # create progress bar
     convertBar = ProgressBar(
@@ -1349,7 +1392,9 @@ def convert_notebooks():
 
 if __name__ == "__main__":
     # Check if a specific file was passed as an argument
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and sys.argv[1] == "--changed":
+        convert_notebooks(only_changed=True)
+    elif len(sys.argv) > 1:
         notebook_file = sys.argv[1]
         if os.path.exists(notebook_file):
             print(f"Converting single notebook: {notebook_file}")

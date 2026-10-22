@@ -63,6 +63,22 @@ kit:
 #   silence_deprecations: [import]
 incremental: true
 
+# Files Jekyll must not copy into _site. Setting `exclude` replaces Jekyll's
+# built-in list, so the defaults (Gemfile ... vendor/ruby/) are repeated here.
+# The Python virtualenv alone is ~28k files / 750 MB: copying it on every
+# build was the main reason `make` was slow (minutes on Docker/WSL mounts).
+exclude:
+  - venv/
+  - .venv/
+  - port_venv/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
 remote_theme: jekyll/minima
 plugins:
   - jekyll-remote-theme

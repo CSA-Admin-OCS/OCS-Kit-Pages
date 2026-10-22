@@ -1,0 +1,626 @@
+// Copy of the public parts of the canonical OCS-in-a-Kit catalog (OCS-Kit/kits/catalog.json):
+// feature names, descriptions, labels and setup guides. Used when the site does not serve
+// /kits/catalog.json. Contains no keys or values, only setting NAMES and help text.
+// Regenerate after the catalog changes (see ADMIN-DASHBOARD-MERGE.md).
+export default {
+  "version": 1,
+  "feature_management": {
+    "allowed_roles": [
+      "admin"
+    ],
+    "description": "Only admins may enable, disable or configure features (admin dashboard or installer). Staff and members can see which features are on but cannot change them. Server operators can also set KIT/FEATURES in the backend .env files."
+  },
+  "roles": {
+    "admin": {
+      "description": "Runs the site: manages users, roles and features. The only role that can turn features on or off.",
+      "can_manage_features": true
+    },
+    "staff": {
+      "description": "Runs day-to-day work: content, groups, grading or approvals. Cannot change features.",
+      "can_manage_features": false
+    },
+    "member": {
+      "description": "Regular user of the site. Default role for new sign-ups. Cannot change features.",
+      "can_manage_features": false
+    }
+  },
+  "categories": {
+    "core": {
+      "name": "Core",
+      "description": "Always on in every kit."
+    },
+    "general": {
+      "name": "General",
+      "description": "Useful to any organization; included in Business and available to every kit."
+    },
+    "education": {
+      "name": "Educational",
+      "description": "Classroom-specific features (lessons, grading, hall pass). Included in the Education kit only; other kits can still opt in explicitly."
+    }
+  },
+  "labels": {
+    "student-safe": "Fine to give to students without extra setup or supervision.",
+    "classroom": "Built for running a class (teacher/student roles, periods, courses).",
+    "teacher-tools": "Mainly used by teachers or admins.",
+    "needs-api-key": "Needs a third-party API key in the backend .env to work.",
+    "third-party-data": "Sends user content to an outside service (e.g. an AI provider).",
+    "needs-external-service": "Needs a separate server or account you run yourself.",
+    "user-content": "Users post content others can see; plan for moderation.",
+    "personal-data": "Stores personal information about users.",
+    "privacy-sensitive": "Handles sensitive data (e.g. biometrics); check your privacy policy first.",
+    "runs-code": "Executes user code in sandboxed containers.",
+    "simulation": "Simulated money/markets/games, no real transactions.",
+    "demo": "Sample/teaching code, not needed in production."
+  },
+  "kits": {
+    "vanilla": {
+      "name": "OCS Vanilla",
+      "description": "Baseline site that can be handed to students: accounts, profile, blog and notebooks. Admins can add features later.",
+      "features": [
+        "core"
+      ],
+      "roles": {
+        "admin": {
+          "label": "Admin",
+          "seed_uid": "admin"
+        },
+        "staff": {
+          "label": "Editor",
+          "seed_uid": "editor"
+        },
+        "member": {
+          "label": "User",
+          "seed_uid": "user"
+        }
+      },
+      "signup_role": "member"
+    },
+    "education": {
+      "name": "OCS Education",
+      "description": "A full CS classroom: lessons, code runners, assignments and grading, game engine, AI chatbot tutor and AI grading, calendar, analytics, hall pass.",
+      "features": [
+        "core",
+        "lessons",
+        "code-runner",
+        "assignments",
+        "game-engine",
+        "ai-chatbot",
+        "ai-grading",
+        "calendar",
+        "analytics",
+        "hallpass",
+        "social",
+        "resume"
+      ],
+      "roles": {
+        "admin": {
+          "label": "Admin",
+          "seed_uid": "admin"
+        },
+        "staff": {
+          "label": "Teacher",
+          "seed_uid": "teacher"
+        },
+        "member": {
+          "label": "Student",
+          "seed_uid": "student"
+        }
+      },
+      "signup_role": "member"
+    },
+    "business": {
+      "name": "OCS Business",
+      "description": "For companies and organizations serving their own users (no students): accounts with Admin/Manager/Member roles, AI chatbot, posts and messaging, calendar, analytics, profiles/resumes. Add any other feature (code runners, game engine, finance simulation, Kasm, face recognition) from the admin dashboard.",
+      "features": [
+        "core",
+        "ai-chatbot",
+        "social",
+        "calendar",
+        "analytics",
+        "resume"
+      ],
+      "roles": {
+        "admin": {
+          "label": "Admin",
+          "seed_uid": "admin"
+        },
+        "staff": {
+          "label": "Manager",
+          "seed_uid": "manager"
+        },
+        "member": {
+          "label": "Member",
+          "seed_uid": "member"
+        }
+      },
+      "signup_role": "member"
+    }
+  },
+  "features": {
+    "core": {
+      "name": "Core platform",
+      "category": "core",
+      "labels": [
+        "student-safe",
+        "personal-data"
+      ],
+      "always_on": true,
+      "description": "Login, accounts, roles, sections/groups, profile, admin pages, blog + notebook pipeline, search.",
+      "setup": {
+        "summary": "Works out of the box. Optional settings add email and Google sign-in for password resets, and S3 file storage.",
+        "settings": [
+          {
+            "key": "MAIL_USERNAME",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "SMTP account used to send password-reset and notification emails."
+          },
+          {
+            "key": "MAIL_PASSWORD",
+            "service": "spring",
+            "required": false,
+            "secret": true,
+            "help": "Password or app password for that SMTP account."
+          },
+          {
+            "key": "GOOGLE_CLIENT_ID",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "Google OAuth client id for 'reset password with Google'.",
+            "get_it": "https://console.cloud.google.com/apis/credentials"
+          },
+          {
+            "key": "AWS_BUCKET_NAME",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "S3 bucket for uploaded files (local disk is used when empty)."
+          }
+        ],
+        "steps": [
+          "Sign in as the admin account created by the installer and change its password.",
+          "Create sections/groups and invite users."
+        ],
+        "verify": "Sign in on the website and open your profile page."
+      }
+    },
+    "lessons": {
+      "name": "Lessons",
+      "category": "education",
+      "labels": [
+        "classroom",
+        "student-safe"
+      ],
+      "description": "Course lessons and notebooks, lesson layouts, lesson progress tracking.",
+      "setup": {
+        "summary": "Lessons are part of the website. Optional text-to-speech needs a VoiceRSS key.",
+        "settings": [
+          {
+            "key": "kit.voicerss_api_key",
+            "service": "pages",
+            "required": false,
+            "secret": false,
+            "help": "VoiceRSS key for the 'read aloud' button in lessons.",
+            "get_it": "https://www.voicerss.org/personel/"
+          }
+        ],
+        "steps": [
+          "Add or edit lessons as Jupyter notebooks in _notebooks/ (or Markdown in _posts/) of your website repository.",
+          "Push to GitHub; the site rebuilds automatically."
+        ],
+        "verify": "Open /lessons/ on the website."
+      }
+    },
+    "code-runner": {
+      "name": "Code runners",
+      "category": "general",
+      "labels": [
+        "runs-code",
+        "student-safe"
+      ],
+      "description": "Run student Python, JavaScript and Java in sandboxed runner containers; code-runner widgets in lessons.",
+      "setup": {
+        "summary": "Runs inside the backend's code_runner containers, which the installer starts automatically.",
+        "settings": [
+          {
+            "key": "JAVA_RUNNER_URL",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "Address of the Java runner container (default http://code_runner:8592)."
+          }
+        ],
+        "steps": [
+          "Make sure the code_runner service is running: `docker compose ps` in the flask and spring folders."
+        ],
+        "verify": "Open a lesson with a code-runner cell and press Run."
+      }
+    },
+    "assignments": {
+      "name": "Assignments and grading",
+      "category": "education",
+      "labels": [
+        "classroom",
+        "teacher-tools",
+        "personal-data"
+      ],
+      "description": "Assignments, submissions, grades, quizzes, quests, certificates, evaluations, team teaching, sprint dates, student/teacher toolkit, grade predictors.",
+      "setup": {
+        "summary": "Needs sections and students; optional GitHub tokens enable Gist/issue submissions.",
+        "settings": [
+          {
+            "key": "GITHUB_API_TOKEN",
+            "service": "spring",
+            "required": false,
+            "secret": true,
+            "help": "GitHub token for reading submitted repositories and issues.",
+            "get_it": "https://github.com/settings/tokens"
+          },
+          {
+            "key": "GIST_TOKEN",
+            "service": "spring",
+            "required": false,
+            "secret": true,
+            "help": "GitHub token allowed to create Gists for code submissions.",
+            "get_it": "https://github.com/settings/tokens"
+          }
+        ],
+        "steps": [
+          "Create a section/course and add students (admin dashboard → Users).",
+          "Create an assignment with a due date and rubric.",
+          "Students submit from the assignment page; grade from the submissions view."
+        ],
+        "verify": "Create a test assignment and submit it with a student account."
+      }
+    },
+    "game-engine": {
+      "name": "Game engine",
+      "category": "general",
+      "labels": [
+        "student-safe"
+      ],
+      "description": "JavaScript game engine, game projects (gamify, adventure/RPG), multiplayer, leaderboards, AI NPCs.",
+      "setup": {
+        "summary": "Runs in the browser; no setup needed. One game level can show live market news with an AlphaVantage key.",
+        "settings": [
+          {
+            "key": "kit.alphavantage_api_key",
+            "service": "pages",
+            "required": false,
+            "secret": false,
+            "help": "AlphaVantage key for the market-news game level (uses the limited 'demo' key when empty).",
+            "get_it": "https://www.alphavantage.co/support/#api-key"
+          }
+        ],
+        "steps": [],
+        "verify": "Open the games page and start a level."
+      }
+    },
+    "ai-chatbot": {
+      "name": "AI chatbot",
+      "category": "general",
+      "labels": [
+        "needs-api-key",
+        "third-party-data"
+      ],
+      "description": "AI chatbot / tutor on the website, answered through the backend's Gemini or Groq chat proxy (API keys stay on the server).",
+      "setup": {
+        "summary": "Needs a Gemini (or Groq) API key on the Flask backend. Keys never go in the website.",
+        "settings": [
+          {
+            "key": "GEMINI_API_KEY",
+            "service": "flask",
+            "required": true,
+            "secret": true,
+            "help": "Google Gemini API key used by the chatbot.",
+            "get_it": "https://aistudio.google.com/apikey"
+          },
+          {
+            "key": "GROQ_API_KEY",
+            "service": "flask",
+            "required": false,
+            "secret": true,
+            "help": "Optional Groq key as an alternative model provider.",
+            "get_it": "https://console.groq.com/keys"
+          }
+        ],
+        "steps": [
+          "Add the key to the Flask .env and restart: `docker compose up -d` in the flask folder.",
+          "Tell users that chat messages are sent to the AI provider."
+        ],
+        "verify": "Open the chatbot and send a message; it should answer instead of saying 'AI assistant not configured'."
+      }
+    },
+    "ai-grading": {
+      "name": "AI grading",
+      "category": "education",
+      "labels": [
+        "classroom",
+        "teacher-tools",
+        "needs-api-key",
+        "third-party-data"
+      ],
+      "description": "AI grading and feedback for free-response (FRQ) answers and assignments.",
+      "setup": {
+        "summary": "Needs a Gemini API key on the Spring backend (and Flask for submission summaries).",
+        "settings": [
+          {
+            "key": "GEMINI_API_KEY",
+            "service": "spring",
+            "required": true,
+            "secret": true,
+            "help": "Google Gemini API key used to grade free-response answers.",
+            "get_it": "https://aistudio.google.com/apikey"
+          },
+          {
+            "key": "GEMINI_API_KEY",
+            "service": "flask",
+            "required": false,
+            "secret": true,
+            "help": "Same key on Flask, used to summarize submissions.",
+            "get_it": "https://aistudio.google.com/apikey"
+          }
+        ],
+        "steps": [
+          "Add the key to both .env files and restart both backends.",
+          "Review AI grades before releasing them to students."
+        ],
+        "verify": "Submit a free-response answer on a test assignment and check that feedback appears."
+      }
+    },
+    "social": {
+      "name": "Social",
+      "category": "general",
+      "labels": [
+        "user-content"
+      ],
+      "description": "Microblog, posts, comments, notes, announcements, chat and direct messages, personas.",
+      "setup": {
+        "summary": "Works out of the box. Decide who moderates posts before turning it on.",
+        "settings": [
+          {
+            "key": "CHATTER_MODEL_URL",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "Optional model endpoint for the 'chatter' feature (disabled when empty)."
+          }
+        ],
+        "steps": [
+          "Pick moderators (Admin or Teacher/Manager accounts) and tell users the posting rules."
+        ],
+        "verify": "Create a post with one account and see it from another."
+      }
+    },
+    "calendar": {
+      "name": "Calendar",
+      "category": "general",
+      "labels": [
+        "teacher-tools"
+      ],
+      "description": "Class calendar, events, issue/calendar sync.",
+      "setup": {
+        "summary": "Works out of the box. Optional Slack sync needs a Slack bot token.",
+        "settings": [
+          {
+            "key": "SLACK_TOKEN",
+            "service": "spring",
+            "required": false,
+            "secret": true,
+            "help": "Slack bot/user token for syncing announcements and events.",
+            "get_it": "https://api.slack.com/apps"
+          },
+          {
+            "key": "ISSUE_OWNER_EMAIL_MAP",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "owner:email pairs for issue notifications."
+          }
+        ],
+        "steps": [
+          "Add your term dates and events from the calendar page."
+        ],
+        "verify": "Open the calendar page and add an event."
+      }
+    },
+    "analytics": {
+      "name": "Analytics",
+      "category": "general",
+      "labels": [
+        "teacher-tools",
+        "personal-data"
+      ],
+      "description": "Usage analytics, GitHub contribution stats, skill snapshots, stats dashboards.",
+      "setup": {
+        "summary": "Usage analytics work out of the box. GitHub statistics need a token and the org/user to track.",
+        "settings": [
+          {
+            "key": "GITHUB_TOKEN",
+            "service": "flask",
+            "required": false,
+            "secret": true,
+            "help": "GitHub token for contribution statistics.",
+            "get_it": "https://github.com/settings/tokens"
+          },
+          {
+            "key": "GITHUB_TARGET_TYPE",
+            "service": "flask",
+            "required": false,
+            "secret": false,
+            "help": "'user' or 'organization'.",
+            "example": "organization"
+          },
+          {
+            "key": "GITHUB_TARGET_NAME",
+            "service": "flask",
+            "required": false,
+            "secret": false,
+            "help": "GitHub org or user whose activity is tracked.",
+            "example": "your-school-org"
+          },
+          {
+            "key": "AUTOMATOR_URL",
+            "service": "flask",
+            "required": false,
+            "secret": false,
+            "help": "Optional skill-snapshot service URL."
+          }
+        ],
+        "steps": [
+          "Open the analytics dashboard as an Admin or Teacher/Manager."
+        ],
+        "verify": "The analytics dashboard shows activity after users sign in."
+      }
+    },
+    "hallpass": {
+      "name": "Hall pass",
+      "category": "education",
+      "labels": [
+        "classroom",
+        "teacher-tools"
+      ],
+      "description": "Bathroom/hall pass queues, student help queue, approval requests.",
+      "setup": {
+        "summary": "Works out of the box once teachers exist.",
+        "settings": [
+          {
+            "key": "ADMIN_EMAIL",
+            "service": "spring",
+            "required": true,
+            "secret": false,
+            "help": "Owner of the default queues and contact address shown to students.",
+            "example": "cs-admin@example.org"
+          }
+        ],
+        "steps": [
+          "Create Teacher accounts; each teacher gets a queue.",
+          "Share the hall-pass page with students."
+        ],
+        "verify": "Request a pass as a student and approve it as the teacher."
+      }
+    },
+    "finance-sim": {
+      "name": "Finance simulation",
+      "category": "general",
+      "labels": [
+        "simulation",
+        "student-safe"
+      ],
+      "description": "Bank, stocks, crypto and mining simulation, casino-style probability games.",
+      "setup": {
+        "summary": "Runs with simulated data. Optional keys pull live prices.",
+        "settings": [
+          {
+            "key": "COINMARKETCAP_API_KEY",
+            "service": "spring",
+            "required": false,
+            "secret": true,
+            "help": "Live crypto prices.",
+            "get_it": "https://pro.coinmarketcap.com/signup"
+          },
+          {
+            "key": "STOCKS_HISTORY_API_URL",
+            "service": "spring",
+            "required": false,
+            "secret": false,
+            "help": "Stock history API (simulated data when empty)."
+          }
+        ],
+        "steps": [],
+        "verify": "Open the finance pages and make a simulated trade."
+      }
+    },
+    "resume": {
+      "name": "Resume builder",
+      "category": "general",
+      "labels": [
+        "personal-data"
+      ],
+      "description": "Personal resume / profile pages and API.",
+      "setup": {
+        "summary": "No setup needed.",
+        "settings": [],
+        "steps": [
+          "Tell users resumes are visible to signed-in users."
+        ],
+        "verify": "Create a resume from your profile."
+      }
+    },
+    "kasm": {
+      "name": "Kasm virtual desktops",
+      "category": "general",
+      "labels": [
+        "needs-external-service"
+      ],
+      "description": "Kasm Workspaces integration (needs a Kasm server).",
+      "setup": {
+        "summary": "Needs your own Kasm Workspaces server.",
+        "settings": [
+          {
+            "key": "KASM_SERVER",
+            "service": "flask",
+            "required": true,
+            "secret": false,
+            "help": "URL of your Kasm server.",
+            "example": "https://kasm.example.org"
+          },
+          {
+            "key": "KASM_API_KEY",
+            "service": "flask",
+            "required": true,
+            "secret": true,
+            "help": "Kasm API key."
+          },
+          {
+            "key": "KASM_API_KEY_SECRET",
+            "service": "flask",
+            "required": true,
+            "secret": true,
+            "help": "Kasm API key secret."
+          }
+        ],
+        "steps": [
+          "Install Kasm Workspaces on a separate server (https://kasmweb.com/docs).",
+          "Create an API key in Kasm admin → Developers."
+        ],
+        "verify": "Open the Kasm users admin page; it should list Kasm users."
+      }
+    },
+    "face-recognition": {
+      "name": "Face recognition",
+      "category": "general",
+      "labels": [
+        "privacy-sensitive",
+        "personal-data"
+      ],
+      "description": "Face registration/login (biometric data: check your school's privacy policy before enabling).",
+      "setup": {
+        "summary": "No keys needed, but it stores biometric data. Get consent first.",
+        "settings": [],
+        "steps": [
+          "Check your privacy policy and local law for biometric data; get written consent.",
+          "Serve the site over HTTPS (browsers only allow cameras on HTTPS)."
+        ],
+        "verify": "Register a face on the profile page and sign in with it."
+      }
+    },
+    "examples": {
+      "name": "Teaching examples",
+      "category": "general",
+      "labels": [
+        "demo",
+        "student-safe"
+      ],
+      "description": "Classroom demo code: hacks, jokes, small sample APIs and pages, media-literacy lesson.",
+      "setup": {
+        "summary": "No setup needed; sample code for teaching.",
+        "settings": [],
+        "steps": [],
+        "verify": "Open the examples pages."
+      }
+    }
+  }
+};

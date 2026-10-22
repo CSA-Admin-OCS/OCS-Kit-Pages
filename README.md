@@ -120,7 +120,7 @@ Admins can also switch features off at run time from the backends: every page as
 1. Add the feature to the canonical catalog in the OCS-Kit repository (id, name, category, labels, kits), then copy it here: `python scripts/apply_kit.py --sync-canonical ../OCS-Kit/kits/catalog.json`.
 2. In `kits/catalog.json`, list the feature's files under `"pages"`: folders end with `/`, globs are allowed. Notebooks (`_notebooks/...`) and projects (`_projects/...`) also exclude their generated output.
 3. Run `python scripts/apply_kit.py --check`: it fails on unknown ids, paths that do not exist, paths claimed by two features and drift from the canonical catalog. CI runs the same check.
-4. Links in shared pages: use `{% include kit/link.html url="/my-page" text="My page" %}`, or wrap markup in `{% unless site.data.kit.disabled contains 'my-feature' %}`. Mark menu items with `data-feature="my-feature"` so run-time switches hide them too (links to the feature's pages are marked automatically).
+4. Links in shared pages: use the `kit/link.html` include (`include kit/link.html url="/my-page" text="My page"`), or wrap markup in an `unless site.data.kit.disabled contains 'my-feature'` block. Mark menu items with `data-feature="my-feature"` so run-time switches hide them too (links to the feature's pages are marked automatically).
 
 ## Where things live
 

@@ -46,6 +46,13 @@ jobs:
           source venv/bin/activate  # Activate the virtual environment
           pip install -r requirements.txt  # Install Python packages
 
+      - name: Check and apply kit features
+        run: |
+          source venv/bin/activate
+          python scripts/apply_kit.py --check  # catalog paths, ids, overlaps (fails the build on errors)
+          python scripts/apply_kit.py --list   # log which features this site is built with
+          python scripts/apply_kit.py          # -> _config.kit.yml, _data/kit_features.json, _data/kit.json
+
       - name: Build registered projects
         run: |
           make build-registered-projects  # Distribute all registered project files to Jekyll locations
@@ -110,7 +117,7 @@ jobs:
 
       - name: Build with Jekyll
         run: |
-          bundle exec jekyll build --config _config.yml,_config.override.yml
+          bundle exec jekyll build --config _config.yml,_config.kit.yml,_config.override.yml
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

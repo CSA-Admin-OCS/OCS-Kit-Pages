@@ -150,9 +150,49 @@ JAVA = [
     (JV + "2025-09-21-4.17-recursive-searching-and-sorting.ipynb", "4-17-recursive-search-sort", U4, "lesson", "4.17 Recursive Searching and Sorting", None),
 ]
 
+FD = "_notebooks/Foundation/"
+FP = "_posts/Foundation/"
+S1, S2, S3, S4 = ("Set Up Your Computer", "Jupyter Notebooks and Kernels", "GitHub Pages", "JavaScript Basics")
+GUIDES = [
+    (FP + "B-tools_and_equipment/2025-04-15-tools_setup-win.md", "windows-wsl-setup", S1, "guide", "Windows (WSL) Setup",
+     "Set up Windows Subsystem for Linux, VS Code, Git, and the project tools on Windows."),
+    (FP + "B-tools_and_equipment/2025-04-15-tools_setup-macos.md", "macos-setup", S1, "guide", "macOS Setup",
+     "Set up Homebrew, VS Code, Git, and the project tools on macOS."),
+    (FP + "B-tools_and_equipment/2025-04-15-tools_setup-linux.md", "linux-setup", S1, "guide", "Linux (Ubuntu) Setup",
+     "Set up VS Code, Git, and the project tools on Ubuntu Linux."),
+    (FP + "B-tools_and_equipment/2025-04-15-tools_setup-github.md", "github", S1, "guide", "Git and GitHub",
+     "Repositories, forks, branches, commits, pull requests, and resolving merge conflicts."),
+    (FP + "B-tools_and_equipment/2025-04-15-tools_setup-vscode.md", "vscode", S1, "guide", "VS Code and Project Setup",
+     "Clone a project, create a Python virtual environment, and run the site locally from VS Code."),
+    (FD + "B-tools_and_equipment/2025-09-02-tools_setup-trouble.ipynb", "troubleshooting", S1, "guide", "Troubleshooting Your Setup",
+     "Diagnose and fix common problems with Git, virtual environments, Ruby, and the local build."),
+    (FP + "B-tools_and_equipment/2025-08-06-intro-to-postman.md", "postman", S1, "guide", "Testing APIs with Postman",
+     "Send GET and POST requests, read JSON responses, and work with cookies in Postman."),
+    (FD + "F-projects/2025-08-19-jupyter-whatarenotebooks.ipynb", "jupyter-notebooks", S2, "guide", "What Are Jupyter Notebooks?",
+     "Markdown and code cells, kernels, and how notebooks become pages on this site."),
+    (FD + "G-kernels/2025-06-14-kernels-python.ipynb", "python-kernel", S2, "guide", "Python Kernel",
+     "Run Python in a notebook, check your environment, and use pip packages."),
+    (FD + "G-kernels/2025-06-14-kernels-java.ipynb", "java-kernel", S2, "guide", "Java Kernel",
+     "Install and use the Java (IJava) kernel to run Java in a notebook."),
+    (FD + "G-kernels/2025-06-14-kernels-javascripthtmlcss.ipynb", "javascript-html-css-kernels", S2, "guide", "HTML, CSS, and JavaScript in Notebooks",
+     "Use %%html and %%js cells to build and test web code inside a notebook."),
+    (FP + "C-github_pages/2023-08-23-github_pages-intro.md", "github-pages", S3, "guide", "GitHub Pages Basics",
+     "How a GitHub Pages site is built from a repository, and how to publish your own."),
+    (FP + "C-github_pages/2023-08-23-github_pages-markdown.md", "markdown-page", S3, "guide", "Build a Markdown Page",
+     "Write a page in Markdown: headings, lists, links, images, tables, and front matter."),
+    (FP + "C-github_pages/2023-08-23-github_pages-theme.md", "pages-theme", S3, "guide", "Change Your Site Theme",
+     "Choose and configure a Jekyll theme for a GitHub Pages site."),
+    (FD + "2026-07-22-Introduction-to-JavaScript.ipynb", "intro-to-javascript", S4, "guide", "Intro to JavaScript",
+     "JavaScript basics: variables, data types, objects, arrays, functions, and the console."),
+    (FD + "B-tools_and_equipment/2025-06-13-html_javascript.ipynb", "html-and-javascript", S4, "guide", "HTML and JavaScript",
+     "Structure a page with HTML and make it interactive with JavaScript."),
+]
+
 COURSES = {
     "python": dict(items=PYTHON, dir="Python", category="Python", date="2026-01-01", label="Python"),
     "java": dict(items=JAVA, dir="Java", category="Java", date="2026-01-02", label="Java"),
+    "guides": dict(items=GUIDES, dir="Guides", category="Guides", date="2026-01-03", label="Guides",
+                   base="/guides/", index="/guides/", nbdest=ROOT / "_notebooks" / "Guides", mddest=ROOT / "_posts" / "Guides"),
 }
 
 # --------------------------------------------------------------------------------------
@@ -175,28 +215,66 @@ DROP_HEADING = re.compile(
 
 # (pattern, replacement) applied to markdown and code
 REPLACEMENTS = [
-    (r"from our Friends of Poway Seniors capstone", "from a community project for a seniors' nonprofit"),
-    (r"our Friends of Poway Seniors capstone", "a community project for a seniors' nonprofit"),
-    (r"Friends of Poway Seniors", "Friends of Seniors"),
+    # sample personal data in guides -> neutral placeholders
+    (r'"Email": "jmor[t]e[n]sen@po[w]ayusd\.com"', '"Email": "alex@example.com"'),
+    (r'"LastName": "Morte[n]sen"', '"LastName": "Rivera"'),
+    (r"jm10[2]1@gmail\.com", "you@example.com"),
+    (r"johnmorte[n]sen@Mac", "you@computer"),
+    (r"/Users/johnmorte[n]sen", "/Users/you"),
+    (r"\bjm10[2]1\b", "your-github-id"),
+    (r'"Mr M"', '"Alex Rivera"'),
+    (r"Del Nor[t]e High School", "Lakeview High School"),
+    (r"Del Nor[t]e", "Lakeview"),
+    (r"^.*[Nn]ighthawk[Cc]oding.*\n", ""),
+    (r"\(Windows, KASM\)", "(Windows, Linux)"),
+    (r"\bxiaoa0\b", "ava-dev"),
+    (r'"Allie", "ava-dev"', '"Ava", "ava-dev"'),
+    (r"\btonyhieu\b", "ben-dev"),
+    (r'"Anthony", "ben-dev"', '"Ben", "ben-dev"'),
+    (r"\bB-G101\b", "cara-dev"),
+    (r'"Bria", "cara-dev"', '"Cara", "cara-dev"'),
+    (r"\bRebecca-123\b", "dev-dev"),
+    (r'"Rebecca", "dev-dev"', '"Dev", "dev-dev"'),
+    (r"\bTigran7\b", "eli-dev"),
+    (r'"Tigran", "eli-dev"', '"Eli", "eli-dev"'),
+    (r"\bVidhiKulkarni\b", "fay-dev"),
+    (r'"Vidhi", "fay-dev"', '"Fay", "fay-dev"'),
+    (r"\billuminati1618\b", "gus-dev"),
+    (r'"Yash", "gus-dev"', '"Gus", "gus-dev"'),
+    (r"author: Mihir Bapat, Yash Parikh, Ansh Kumar", "author: Your Name"),
+    (r"'Ryden', 'Aarav', 'Sam'", "'Sam', 'Maya', 'Leo'"),
+    (r'\\"Ryden\\", \\"Aarav\\", \\"Sam\\"', '"Sam", "Maya", "Leo"'),
+    (r'"Ryden", "Aarav", "Sam"', '"Sam", "Maya", "Leo"'),
+    (r"\bSoni\b", "Maya"),
+    (r"The Teacher finds", "Many authors find"),
+    (r"The Teacher and many students from previous years have focused", "Many student sites have focused"),
+    (r"The Teacher favorite is leaf", "Leaf is a popular choice"),
+    (r"^.*inclusion of nigh[t]hawk main.*\n", ""),
+    (r"^.*Styles for nigh[t]hawk theme.*\n", ""),
+    (r'^.*@import "nigh[t]hawk/main";.*\n', ""),
+    (r"/teacher/images/", "/images/"),
+    (r"from our Friends of Po[w]ay Seniors capstone", "from a community project for a seniors' nonprofit"),
+    (r"our Friends of Po[w]ay Seniors capstone", "a community project for a seniors' nonprofit"),
+    (r"Friends of Po[w]ay Seniors", "Friends of Seniors"),
     (r"\s*\((?:\d(?:st|nd|rd|th)|fourth) period\)", ""),
     (r"the shared class server is down; not something you can fix", "the backend server is down or unreachable"),
     (r"<(\{\{\s*site\.baseurl\s*\}\}[^>\s]+)>", r"[\1](\1)"),
     (r"your submission description", "your notes"),
     (r"into the Description box when you submit", "into your notes"),
-    (r"Poway Neighborhood Emergency Corps", "Neighborhood Emergency Corps"),
-    (r"Poway Recovery Center", "Community Recovery Center"),
-    (r"\bPoway\b", "Lakeview"),
-    (r"Mr\. Mortens[eo]n asks you", "your teacher asks you"),
-    (r"(?:John )?Mortens[eo]n'?s?", "the instructor"),
+    (r"Po[w]ay Neighborhood Emergency Corps", "Neighborhood Emergency Corps"),
+    (r"Po[w]ay Recovery Center", "Community Recovery Center"),
+    (r"\bPo[w]ay\b", "Lakeview"),
+    (r"Mr\. Morte[n]s[eo]n asks you", "your teacher asks you"),
+    (r"(?:John )?Morte[n]s[eo]n'?s?", "the instructor"),
     (r"our (?:own )?capstone (?:project|nonprofit|site)", "a community nonprofit project"),
     (r"our capstone", "a community project"),
     (r"(?:Your teacher's out sick\. )?You're covering 1st period", "You're covering a class"),
     (r"\b(?:\d(?:st|nd|rd|th)|fourth|4th) period\b", "class"),
-    (r"https?://flask\.opencodingsociety\.com", "your Flask backend"),
-    (r"`flask\.opencodingsociety\.com`", "your deployed Flask backend"),
-    (r"https?://(?:pages\.)?opencodingsociety\.com/csa/unit_0(\d)/(\d+)_(\d+)", r"{{site.baseurl}}/csa/unit_0\1/\2_\3"),
-    (r"https?://(?:pages\.)?opencodingsociety\.com(/[^\s)\"'>]*)?", r"{{site.baseurl}}\1"),
-    (r"opencodingsociety\.com", "the course site"),
+    (r"https?://flask\.opencodingsociety[.]com", "your Flask backend"),
+    (r"`flask\.opencodingsociety[.]com`", "your deployed Flask backend"),
+    (r"https?://(?:pages\.)?opencodingsociety[.]com/csa/unit_0(\d)/(\d+)_(\d+)", r"{{site.baseurl}}/csa/unit_0\1/\2_\3"),
+    (r"https?://(?:pages\.)?opencodingsociety[.]com(/[^\s)\"'>]*)?", r"{{site.baseurl}}\1"),
+    (r"opencodingsociety[.]com", "the course site"),
     (r"your submission notes", "your notes"),
     (r"submission notebook", "notebook"),
     (r"\[Jump to the LxD cycle\]\(#lxd-cycle-process\)\s*·\s*", ""),
@@ -313,6 +391,23 @@ def mcq_card_to_u2(src):
     return src[:m.start()] + "\n".join(parts) + src[m.end():]
 
 
+def reduce_inline_styles(src):
+    """Guides: keep only display:none (needed by scripts) from inline style attributes."""
+    def repl(m):
+        return ' style="display:none;"' if re.search(r"display\s*:\s*none", m.group(1)) else ""
+    src = re.sub(r'\s+style="([^"]*)"', repl, src)
+    return re.sub(r"\s+style='([^']*)'", repl, src)
+
+
+def drop_missing_includes(src):
+    def repl(m):
+        if (ROOT / "_includes" / m.group(1)).exists():
+            return m.group(0)
+        warnings.append(f"include removed (not in kit): {m.group(1)}")
+        return ""
+    return re.sub(r"\{%-?\s*include\s+([\w./-]+)[^%]*-?%\}", repl, src)
+
+
 def drop_submission_sentences(src):
     """Remove plain-text sentences about submitting work (outside code, HTML and scripts)."""
     out, in_fence, in_script = [], False, False
@@ -388,6 +483,10 @@ def clean_outputs(cell):
         if text is None or len(text) > 3000 or re.search(r"/home/|/Users/|C:\\\\|Traceback|Exception", text):
             continue
         o = copy.deepcopy(out)
+        if "text" in o:
+            o["text"] = apply_replacements("".join(o["text"])).splitlines(keepends=True)
+        if "data" in o and "text/plain" in o["data"]:
+            o["data"]["text/plain"] = apply_replacements("".join(o["data"]["text/plain"])).splitlines(keepends=True)
         if "execution_count" in o:
             o["execution_count"] = None
         keep.append(o)
@@ -411,9 +510,15 @@ def build(upstream):
     old_to_new = {}
     for course, cfg in COURSES.items():
         for idx, (src, slug, unit, kind, title, desc) in enumerate(cfg["items"]):
-            nb = json.loads((upstream / src).read_text())
-            fm = parse_front_matter(nb)
-            permalink = f"/lessons/{course}/{slug}/"
+            raw = (upstream / src).read_text()
+            if src.endswith(".md"):
+                m = re.match(r"\s*---\s*\n(.*?)\n---\s*\n(.*)", raw, re.S)
+                fm = yaml.safe_load(m.group(1)) or {}
+                nb = {"cells": [{"cell_type": "raw", "source": []}, {"cell_type": "markdown", "source": [m.group(2)]}]}
+            else:
+                nb = json.loads(raw)
+                fm = parse_front_matter(nb)
+            permalink = f"{cfg.get('base', '/lessons/' + course + '/')}{slug}/"
             if fm.get("permalink"):
                 old_to_new[str(fm["permalink"]).rstrip("/")] = permalink
             all_items.append(dict(course=course, cfg=cfg, idx=idx, src=src, slug=slug, unit=unit, kind=kind,
@@ -429,14 +534,18 @@ def build(upstream):
         "/navigation/py-reference": "/lessons/python/",
         "/python/data-abstractions": "/lessons/python/3-02-data-abstraction/",
         "/python/nested-conditionals/student-life": "/lessons/python/3-07-nested-conditionals/",
+        "/tools": "/guides/",
+        "/tools/os": "/guides/",
     })
     rewrite = link_rewriter(old_to_new)
 
     for course, cfg in COURSES.items():
-        outdir = DEST / cfg["dir"]
-        outdir.mkdir(parents=True, exist_ok=True)
-        for old in outdir.glob("*.ipynb"):
-            old.unlink()
+        for outdir, pattern in ((cfg.get("nbdest", DEST / cfg["dir"]), "*.ipynb"), (cfg.get("mddest"), "*.md")):
+            if outdir is None:
+                continue
+            outdir.mkdir(parents=True, exist_ok=True)
+            for old in outdir.glob(pattern):
+                old.unlink()
 
     by_course = {}
     for it in all_items:
@@ -461,7 +570,7 @@ def build(upstream):
                 "description": desc,
                 "categories": [it["cfg"]["category"]],
                 "author": "OCS Kit",
-                "codemirror": True,
+                "codemirror": not it["src"].endswith(".md"),
                 "toc": True,
                 "permalink": it["permalink"],
                 "lesson_course": course,
@@ -487,6 +596,9 @@ def build(upstream):
                     src = re.sub(r'(<img\b[^>]*?)\s+style="[^"]*"', r"\1", src)
                     src = re.sub(r"^\s*%%\{init:.*?\}%%\s*$\n?", "", src, flags=re.M)
                     src = HTML_DROP_SECTION.sub("", src)
+                    if course == "guides":
+                        src = reduce_inline_styles(src)
+                        src = drop_missing_includes(src)
                     src = DUE_LINE.sub("", src)
                     src = sf.process_markdown(src)
                     # top-level "# Title" duplicates the page title
@@ -520,30 +632,42 @@ def build(upstream):
             prev_it = items[pos - 1] if pos > 0 else None
             next_it = items[pos + 1] if pos + 1 < len(items) else None
             label = it["cfg"]["label"]
+            index_url = it["cfg"].get("index", f"/lessons/{course}/")
+            index_text = f"{label} index" if course == "guides" else f"{label} course index"
             footer = ['<nav class="ocs__pager" aria-label="Lesson navigation">']
             if prev_it:
                 footer.append(f'  <a class="ocs__pager-link" href="{{{{site.baseurl}}}}{prev_it['permalink']}">&larr; {prev_it['title']}</a>')
             else:
-                footer.append(f'  <a class="ocs__pager-link" href="{{{{site.baseurl}}}}/lessons/{course}/">&larr; {label} course index</a>')
+                footer.append(f'  <a class="ocs__pager-link" href="{{{{site.baseurl}}}}{index_url}">&larr; {index_text}</a>')
             if next_it:
                 footer.append(f'  <a class="ocs__pager-link next" href="{{{{site.baseurl}}}}{next_it['permalink']}">{next_it['title']} &rarr;</a>')
             else:
-                footer.append(f'  <a class="ocs__pager-link next" href="{{{{site.baseurl}}}}/lessons/{course}/">{label} course index &rarr;</a>')
+                footer.append(f'  <a class="ocs__pager-link next" href="{{{{site.baseurl}}}}{index_url}">{index_text} &rarr;</a>')
             footer.append("</nav>")
             footer.append("")
-            footer.append(f"[All {label} lessons]({{{{site.baseurl}}}}/lessons/{course}/)")
+            footer.append(f"[All {label if course == 'guides' else label + ' lessons'}]({{{{site.baseurl}}}}{index_url})")
             cells.append({"cell_type": "markdown", "metadata": {}, "source": [l + "\n" for l in footer]})
 
+            if it["src"].endswith(".md"):
+                body = "\n\n".join("".join(c["source"]).strip() for c in cells[1:])
+                fname = f"{it['cfg']['date']}-guide-{pos + 1:02d}-{it['slug']}.md"
+                (it["cfg"]["mddest"] / fname).write_text(fm_text + "\n\n" + body + "\n")
+                it["file"] = f"_posts/Guides/{fname}"
+                continue
+            kernelspec = nb.get("metadata", {}).get("kernelspec") if course == "guides" else None
             out_nb = {"cells": cells, "metadata": {
                 "kernelspec": {"display_name": "Java", "language": "java", "name": "java"} if course == "java"
                 else {"display_name": "Python 3", "language": "python", "name": "python3"},
                 "language_info": {"name": "java" if course == "java" else "python"}},
                 "nbformat": 4, "nbformat_minor": 5}
+            if kernelspec:
+                out_nb["metadata"] = {"kernelspec": kernelspec}
             for n, cell in enumerate(out_nb["cells"]):
                 cell["id"] = f"cell-{n:03d}"
             fname = f"{it['cfg']['date']}-{course}-{pos + 1:02d}-{it['slug']}.ipynb"
-            (DEST / it["cfg"]["dir"] / fname).write_text(json.dumps(out_nb, indent=1, ensure_ascii=False) + "\n")
-            it["file"] = f"_notebooks/Lessons/{it['cfg']['dir']}/{fname}"
+            nbdest = it["cfg"].get("nbdest", DEST / it["cfg"]["dir"])
+            (nbdest / fname).write_text(json.dumps(out_nb, indent=1, ensure_ascii=False) + "\n")
+            it["file"] = str((nbdest / fname).relative_to(ROOT))
     return all_items
 
 

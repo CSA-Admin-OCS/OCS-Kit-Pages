@@ -40,7 +40,7 @@ kit:
   #   name: vanilla    baseline site, safe to hand to students (core only)
   #   name: education  classroom: lessons, code runners, assignments, games, AI, ...
   #   name: business   organizations: AI chatbot, social, calendar, analytics, resume
-  name: business
+  name: education
   # features: [] uses the preset as is. Otherwise:
   #   ["+finance-sim", "-social"]     add/remove features relative to the preset
   #   ["lessons", "code-runner"]      explicit list (core is always on)

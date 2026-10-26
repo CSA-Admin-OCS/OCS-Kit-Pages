@@ -1,0 +1,26 @@
+{% comment %}
+Lists every page whose front matter has lesson_course == include.course,
+grouped by lesson_unit and ordered by lesson_order. Uses the kit's ocs__ classes.
+Usage: {% include lessons/course-index.html course="java" %}
+{% endcomment %}
+{% assign course_pages = site.posts | concat: site.pages | where: "lesson_course", include.course | sort: "lesson_order" %}
+{% assign course_units = course_pages | map: "lesson_unit" | uniq %}
+{% for unit in course_units %}
+<div class="ocs__card">
+  <h2 class="ocs__section-title">{{ unit }}</h2>
+  <div class="ocs__table-wrap">
+    <table class="ocs__table">
+      <thead><tr><th>Lesson</th><th>What you will learn</th></tr></thead>
+      <tbody>
+      {% for item in course_pages %}{% if item.lesson_unit == unit %}
+        <tr>
+          <td><a href="{{ site.baseurl }}{{ item.url }}">{{ item.title }}</a>{% if item.lesson_kind and item.lesson_kind != "lesson" and item.lesson_kind != "guide" %} <span class="ocs__status-pill ocs__status-pill--neutral">{{ item.lesson_kind }}</span>{% endif %}</td>
+          <td>{{ item.description }}</td>
+        </tr>
+      {% endif %}{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+<p>{{ course_pages | size }} pages in this section.</p>

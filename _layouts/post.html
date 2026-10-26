@@ -79,16 +79,16 @@ Check if this is a course lesson and determine which course context to use
           {% include gist-export-button.html %}
           {% endif %}
 
-          {% if page.assignment %}
-          {% include lesson-submission-form.html %}
+          {% if page.assignment %}{% unless site.data.kit.disabled contains 'assignments' %}
+          {% include lesson-submission-form.html %}{% endunless %}
           {% endif %}
         </div>
 
-        {%- if page.comments -%}
+        {%- if page.comments -%}{%- unless site.data.kit.disabled contains 'social' -%}
         <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #2a2a2a;">
           {%- include utterances.html -%}
         </div>
-        {%- endif -%}
+        {%- endunless -%}{%- endif -%}
       </div>
     </div>
 </div>
@@ -1459,9 +1459,9 @@ Check if this is a course lesson and determine which course context to use
     </script>
     {% endif %}
   </div>
-  {%- if page.comments -%}
+  {%- if page.comments -%}{%- unless site.data.kit.disabled contains 'social' -%}
   {%- include utterances.html -%}
-  {%- endif -%}
+  {%- endunless -%}{%- endif -%}
   {%- if site.disqus.shortname -%}
   {%- include disqus_comments.html -%}
   {%- endif -%}

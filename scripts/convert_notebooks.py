@@ -1,4 +1,55 @@
 import glob
+import os
+import sys
+
+
+def kit_excluded_notebook_patterns():
+    """_notebooks/ patterns excluded by the active kit, read from the generated
+    _config.kit.yml (scripts/apply_kit.py). Missing file -> convert everything."""
+    import json as _json
+    pats = []
+    try:
+        with open("_config.kit.yml", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("- "):
+                    item = _json.loads(line[2:]) if line[2:].startswith('"') else line[2:]
+                    if item.startswith("_notebooks/"):
+                        pats.append(item.rstrip("/"))
+    except OSError:
+        pass
+    return pats
+
+
+def kit_disabled(notebook_file, patterns):
+    """True when the notebook belongs to a feature the kit turns off (Jekyll exclude semantics)."""
+    import fnmatch
+    path = os.path.relpath(notebook_file).replace(os.sep, "/")
+    return any(fnmatch.fnmatch(path, p) or path.startswith(p) for p in patterns)
+
+
+def _all_outputs_fresh():
+    """Cheap stdlib-only check for `--changed`: True when every notebook's
+    markdown is newer than the notebook and this script (skips importing nbconvert)."""
+    script_mtime = os.path.getmtime(os.path.abspath(__file__))
+    skip = kit_excluded_notebook_patterns()
+    for nb in glob.glob("_notebooks/**/*.ipynb", recursive=True):
+        if kit_disabled(nb, skip):
+            continue
+        out = os.path.join("_posts", os.path.relpath(nb, "_notebooks").replace(".ipynb", "_IPYNB_2_.md"))
+        try:
+            out_mtime = os.path.getmtime(out)
+        except OSError:
+            return False
+        if out_mtime < os.path.getmtime(nb) or out_mtime < script_mtime:
+            return False
+    return True
+
+
+if __name__ == "__main__" and sys.argv[1:] == ["--changed"] and _all_outputs_fresh():
+    print("Notebooks: all up to date")
+    sys.exit(0)
+
 from nbconvert import MarkdownExporter
 from nbconvert.utils.exceptions import ConversionException
 import os
@@ -1314,11 +1365,36 @@ def process_notebook(notebook_file):
         print(f"Unexpected error for {notebook_file}: {traceback.format_exc()}")
 
 
-def convert_notebooks():
-    """Convert all notebooks in parallel while reporting progress."""
+def is_up_to_date(notebook_file):
+    """True when the generated markdown is newer than both the notebook and this converter."""
+    output = get_relative_output_path(notebook_file)
+    if not os.path.exists(output):
+        return False
+    out_mtime = os.path.getmtime(output)
+    return (out_mtime >= os.path.getmtime(notebook_file)
+            and out_mtime >= os.path.getmtime(os.path.abspath(__file__)))
+
+
+def convert_notebooks(only_changed=False):
+    """Convert notebooks in parallel while reporting progress.
+
+    only_changed: skip notebooks whose markdown output is already up to date
+    (used by `make`; CI converts everything from a clean checkout).
+    """
     maxCores = os.cpu_count()  # get the number of cores available on the system
 
     notebook_files = glob.glob(f"{notebook_directory}/**/*.ipynb", recursive=True)
+    skip = kit_excluded_notebook_patterns()
+    if skip:
+        kept = [nb for nb in notebook_files if not kit_disabled(nb, skip)]
+        print(f"Kit: skipping {len(notebook_files) - len(kept)} notebook(s) of disabled features")
+        notebook_files = kept
+    total = len(notebook_files)
+    if only_changed:
+        notebook_files = [nb for nb in notebook_files if not is_up_to_date(nb)]
+        print(f"Notebooks: {len(notebook_files)} of {total} need conversion")
+        if not notebook_files:
+            return
 
     # create progress bar
     convertBar = ProgressBar(
@@ -1349,7 +1425,9 @@ def convert_notebooks():
 
 if __name__ == "__main__":
     # Check if a specific file was passed as an argument
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and sys.argv[1] == "--changed":
+        convert_notebooks(only_changed=True)
+    elif len(sys.argv) > 1:
         notebook_file = sys.argv[1]
         if os.path.exists(notebook_file):
             print(f"Converting single notebook: {notebook_file}")

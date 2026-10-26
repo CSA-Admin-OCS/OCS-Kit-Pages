@@ -67,8 +67,11 @@
     }
     window.alphaVantageKey = "{{ site.kit.alphavantage_api_key }}";
 </script>
-<!-- OCS Analytics Tracking Script (loaded on every page) -->
+{%- unless site.data.kit.disabled contains 'analytics' %}
+<!-- OCS Analytics Tracking Script (loaded on every page; kit feature: analytics) -->
 <script src="{{ site.baseurl }}/assets/js/ocs-analytics-tracker.js" defer></script>
+{%- endunless %}
+{% include kit/runtime.html %}
 {%- if page.socket_io -%}
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {%- endif -%}

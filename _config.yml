@@ -36,7 +36,17 @@ kit:
   # Optional public client-side keys (leave empty to disable the feature)
   voicerss_api_key: ""     # text-to-speech in the lesson sidebar
   alphavantage_api_key: "" # Silicon Valley game level news (falls back to "demo")
-  features: []           # filled by presets later
+  # Kit preset and features (see kits/catalog.json and README "Choosing a kit").
+  #   name: vanilla    baseline site, safe to hand to students (core only)
+  #   name: education  classroom: lessons, code runners, assignments, games, AI, ...
+  #   name: business   organizations: AI chatbot, social, calendar, analytics, resume
+  name: business
+  # features: [] uses the preset as is. Otherwise:
+  #   ["+finance-sim", "-social"]     add/remove features relative to the preset
+  #   ["lessons", "code-runner"]      explicit list (core is always on)
+  #   ["*"]                           every feature
+  # See what a setting does before building: python scripts/apply_kit.py --list
+  features: []
 
 # Build settings
 # --------------
@@ -62,6 +72,23 @@ kit:
 #   quiet_deps: true
 #   silence_deprecations: [import]
 incremental: true
+
+# Files Jekyll must not copy into _site. Setting `exclude` replaces Jekyll's
+# built-in list, so the defaults (Gemfile ... vendor/ruby/) are repeated here.
+# The Python virtualenv alone is ~28k files / 750 MB: copying it on every
+# build was the main reason `make` was slow (minutes on Docker/WSL mounts).
+exclude:
+  - venv/
+  - .venv/
+  - port_venv/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - kits/
 
 remote_theme: jekyll/minima
 plugins:

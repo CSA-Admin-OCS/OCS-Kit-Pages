@@ -43,7 +43,8 @@ def generate_sass_imports():
     content = header + "\n".join(imports) + "\n"
     
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(content)
+    if not OUTPUT_FILE.exists() or OUTPUT_FILE.read_text() != content:
+        OUTPUT_FILE.write_text(content)
     
     print(f"✅ Generated {len(imports)} SASS imports in {OUTPUT_FILE}")
     for imp in imports:

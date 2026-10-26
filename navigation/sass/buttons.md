@@ -18,9 +18,7 @@ Hi! My name is [Your Full Name]
 > SASS Mixins examples and code, explore these topics by clicking standard OCS SASS buttons.
 
 <div class="ocs__links">
-    <a class="ocs__btn" href="{{site.baseurl}}/github/pages/about_sass_buttons/">
-        Buttons Lesson
-    </a>
+    {% include kit/link.html url="/github/pages/about_sass_buttons/" text="Buttons Lesson" class="ocs__btn" %}
     <a class="ocs__btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/_sass/open-coding/mixins/_buttons.scss">
         Button Mixins
     </a>
@@ -65,18 +63,10 @@ Hi! My name is [Your Full Name]
 > Foundations in Tech are essential, click my iridescent buttons to see some of my lesson creations.
 
 <div class="ocs__links">
-    <a class="ocs__btn iridescent" href="{{site.baseurl}}/code/javascript">
-        JS Basics
-    </a>
-    <a class="ocs__btn alert-green iridescent" href="{{site.baseurl}}/game/essentials/variables">
-        JS Variables
-    </a>
-    <a class="ocs__btn alert-yellow iridescent" href="{{site.baseurl}}/gamerunner">
-        Gamerunner
-    </a>
-    <a class="ocs__btn alert-red iridescent" href="{{site.baseurl}}/network/stack">
-        Networking
-    </a>
+    {% include kit/link.html url="/code/javascript" text="JS Basics" class="ocs__btn iridescent" %}
+    {% include kit/link.html url="/game/essentials/variables" text="JS Variables" class="ocs__btn alert-green iridescent" %}
+    {% include kit/link.html url="/gamerunner" text="Gamerunner" class="ocs__btn alert-yellow iridescent" %}
+    {% include kit/link.html url="/network/stack" text="Networking" class="ocs__btn alert-red iridescent" %}
 </div>
 
 <br>
@@ -86,18 +76,10 @@ Hi! My name is [Your Full Name]
 > Here is my game progress through coding, click multicolor and size buttons to see these in the browser
 
 <div class="ocs__links">
-    <a href="{{site.baseurl}}/snake" class="ocs__btn pill alert-green fill">
-        Snake
-    </a>
-    <a href="{{site.baseurl}}/gamify/parallax" class="ocs__btn small alert-yellow fill">
-        Fish
-    </a>
-    <a href="{{site.baseurl}}/gamify" class="ocs__btn alert-red fill">
-        Gamify
-    </a>
-    <a href="{{site.baseurl}}/cs-pathway" class="ocs__btn large">
-        CS Pathway
-    </a>
+    {% include kit/link.html url="/snake" text="Snake" class="ocs__btn pill alert-green fill" %}
+    {% include kit/link.html url="/gamify/parallax" text="Fish" class="ocs__btn small alert-yellow fill" %}
+    {% include kit/link.html url="/gamify" text="Gamify" class="ocs__btn alert-red fill" %}
+    {% include kit/link.html url="/cs-pathway" text="CS Pathway" class="ocs__btn large" %}
 </div>
 
 <br>

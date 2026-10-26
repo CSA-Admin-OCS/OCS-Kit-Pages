@@ -45,11 +45,11 @@ class KeyboardShortcutsManager {
                 <h3>Keyboard Shortcuts</h3>
                 <p class="ks-hint">Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>key</kbd></p>
                 <table>
-                    <tr><td><kbd>C</kbd></td><td>Calendar</td></tr>
+                    <tr data-kit-url="/student/calendar"><td><kbd>C</kbd></td><td>Calendar</td></tr>
                     <tr><td><kbd>H</kbd></td><td>Home</td></tr>
                     <tr><td><kbd>P</kbd></td><td>Profile</td></tr>
-                    <tr><td><kbd>S</kbd></td><td>Student Toolkit</td></tr>
-                    <tr><td><kbd>T</kbd></td><td>Teacher Toolkit</td></tr>
+                    <tr data-kit-url="/student"><td><kbd>S</kbd></td><td><span data-role-label="member">Student</span> Toolkit</td></tr>
+                    <tr data-kit-url="/teacher"><td><kbd>T</kbd></td><td><span data-role-label="staff">Teacher</span> Toolkit</td></tr>
                     <tr><td><kbd>L</kbd></td><td>Login</td></tr>
                     <tr><td><kbd>U</kbd></td><td>Signup</td></tr>
                     <tr><td><kbd>?</kbd></td><td>Show this help</td></tr>
@@ -57,6 +57,13 @@ class KeyboardShortcutsManager {
                 <p class="ks-close-hint">Press <kbd>Esc</kbd> or click outside to close</p>
             </div>
         `;
+        // Kit: drop rows for pages of features that are turned off
+        if (window.OCS_KIT) {
+            div.querySelectorAll('[data-kit-url]').forEach((row) => {
+                if (!window.OCS_KIT.isUrlEnabled((window.baseurl || '') + row.dataset.kitUrl)) row.remove();
+            });
+        }
+        if (window.OCS_KIT) window.OCS_KIT.apply(div);  // role labels (Teacher/Manager/...)
         return div;
     }
 
@@ -120,6 +127,10 @@ class KeyboardShortcutsManager {
      * Responsibility: Navigate to a destination URL
      */
     navigate(destination) {
+        // Kit: do not jump to pages of features that are turned off (assets/js/kit-features.js)
+        if (window.OCS_KIT && !window.OCS_KIT.isUrlEnabled((window.baseurl || '') + destination)) {
+            return;
+        }
         const baseurl = window.baseurl || '';
         let url = destination;
         if (baseurl && !url.startsWith(baseurl)) {

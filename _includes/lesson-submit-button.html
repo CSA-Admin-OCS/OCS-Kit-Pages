@@ -1,3 +1,4 @@
+{%- unless site.data.kit.disabled contains 'assignments' -%}
 <!-- 
   Lesson Submit Button - Submit ALL challenges from a lesson at once
   
@@ -303,3 +304,4 @@
         submitBtn.addEventListener('click', submitAllChallenges);
     })();
 </script>
+{%- endunless -%}

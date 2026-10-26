@@ -3,11 +3,39 @@ import os
 import sys
 
 
+def kit_excluded_notebook_patterns():
+    """_notebooks/ patterns excluded by the active kit, read from the generated
+    _config.kit.yml (scripts/apply_kit.py). Missing file -> convert everything."""
+    import json as _json
+    pats = []
+    try:
+        with open("_config.kit.yml", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("- "):
+                    item = _json.loads(line[2:]) if line[2:].startswith('"') else line[2:]
+                    if item.startswith("_notebooks/"):
+                        pats.append(item.rstrip("/"))
+    except OSError:
+        pass
+    return pats
+
+
+def kit_disabled(notebook_file, patterns):
+    """True when the notebook belongs to a feature the kit turns off (Jekyll exclude semantics)."""
+    import fnmatch
+    path = os.path.relpath(notebook_file).replace(os.sep, "/")
+    return any(fnmatch.fnmatch(path, p) or path.startswith(p) for p in patterns)
+
+
 def _all_outputs_fresh():
     """Cheap stdlib-only check for `--changed`: True when every notebook's
     markdown is newer than the notebook and this script (skips importing nbconvert)."""
     script_mtime = os.path.getmtime(os.path.abspath(__file__))
+    skip = kit_excluded_notebook_patterns()
     for nb in glob.glob("_notebooks/**/*.ipynb", recursive=True):
+        if kit_disabled(nb, skip):
+            continue
         out = os.path.join("_posts", os.path.relpath(nb, "_notebooks").replace(".ipynb", "_IPYNB_2_.md"))
         try:
             out_mtime = os.path.getmtime(out)
@@ -1356,6 +1384,11 @@ def convert_notebooks(only_changed=False):
     maxCores = os.cpu_count()  # get the number of cores available on the system
 
     notebook_files = glob.glob(f"{notebook_directory}/**/*.ipynb", recursive=True)
+    skip = kit_excluded_notebook_patterns()
+    if skip:
+        kept = [nb for nb in notebook_files if not kit_disabled(nb, skip)]
+        print(f"Kit: skipping {len(notebook_files) - len(kept)} notebook(s) of disabled features")
+        notebook_files = kept
     total = len(notebook_files)
     if only_changed:
         notebook_files = [nb for nb in notebook_files if not is_up_to_date(nb)]

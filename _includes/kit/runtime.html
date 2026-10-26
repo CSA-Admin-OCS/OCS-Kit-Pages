@@ -1,0 +1,6 @@
+{%- comment -%}
+  Kit runtime switch: hides links/menu items of features that are off (build time
+  via _data/kit.json, run time via the backends' /api/kit) and applies the kit's
+  role labels. Must come before scripts that call window.OCS_KIT (both deferred).
+{%- endcomment -%}
+<script src="{{ site.baseurl }}/assets/js/kit-features.js" defer></script>

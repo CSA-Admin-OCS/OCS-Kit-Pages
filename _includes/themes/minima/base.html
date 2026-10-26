@@ -7,14 +7,17 @@
     <body>
         {%- include themes/minima/header.html -%}
 
-        {% if page.microblog %}
+        {%- comment -%} Social widgets only when the kit's social feature is on {%- endcomment -%}
+        {%- assign kit_social = true -%}
+        {%- if site.data.kit.disabled contains 'social' -%}{%- assign kit_social = false -%}{%- endif %}
+        {% if page.microblog and kit_social %}
           <div class="micro-actions-wrapper">
             {% include microblog_foundation.html %}
             {% include inbox_foundation.html %}
           </div>
         {% endif %}
 
-        {% if page.feedback  %}
+        {% if page.feedback and kit_social %}
           {% include feedback_foundation.html %}
         {% endif %}
 

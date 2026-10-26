@@ -1,3 +1,4 @@
+{%- unless site.data.kit.disabled contains 'assignments' -%}
 <!-- ASSIGNMENT SUBMISSION FORM -->
 {% comment %}
   Displays when page.assignment is true
@@ -61,3 +62,4 @@
 
   <div class="submission-status" id="submission-status"></div>
 </div>
+{%- endunless -%}

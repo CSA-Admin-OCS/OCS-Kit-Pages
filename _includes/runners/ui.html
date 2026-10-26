@@ -1,3 +1,10 @@
+{%- comment -%} Kit: when code-runner is off this runner degrades to a read-only code block. {%- endcomment -%}
+{%- if site.data.kit.disabled contains 'code-runner' -%}
+<div class="runner-disabled" data-feature="code-runner">
+{%- if include.challenge %}<p>{{ include.challenge }}</p>{% endif %}
+<pre><code>{{ include.code | escape }}</code></pre>
+</div>
+{%- else -%}
 <!-- Reusable UI Runner Component -->
 <div class="ui-runner-container" id="ui-runner-{{ include.runner_id }}" data-storage-key="{{ page.permalink | replace: '/', '_' }}_{{ include.runner_id }}">
   {% include runners/fragments/challenge-box.html challenge=include.challenge %}
@@ -106,3 +113,4 @@ import { BaseRunner, UiExecutor } from '{{ site.baseurl }}/assets/js/pages/runne
   }
 })();
 </script>
+{%- endif -%}

@@ -21,7 +21,7 @@ Hi! My name is [Your Full Name]
 > SASS Mixins examples and code, explore these topics by clicking standard OCS SASS buttons.
 
 <div class="ocs__links">
-    {% include kit/link.html url="/github/pages/about_sass_buttons/" text="Buttons Lesson" class="ocs__btn" %}
+    {% include kit/link.html url="/navigation/sass/buttons/" text="Buttons Lesson" class="ocs__btn" %}
     <a class="ocs__btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/_sass/open-coding/mixins/_buttons.scss">
         Button Mixins
     </a>

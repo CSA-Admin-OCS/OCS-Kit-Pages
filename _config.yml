@@ -148,6 +148,7 @@ plugins:
 
 minima:
   skin: dark
+  hide_site_feed_link: true   # jekyll-feed is not enabled, so don't link /feed.xml
   social_links:
     - { platform: github, user_url: "https://github.com/your-github-username" }
   nav_pages:

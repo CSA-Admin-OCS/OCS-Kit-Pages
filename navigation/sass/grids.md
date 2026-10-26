@@ -18,7 +18,7 @@ Hi! My name is [Your Full Name]
 > SASS Grid Mixins examples and code — multiple grid layouts that adapt to the active theme, just like buttons do.
 
 <div class="ocs__links">
-    <a class="ocs__btn" href="{{site.baseurl}}/github/pages/about_sass_buttons/">
+    <a class="ocs__btn" href="{{site.baseurl}}/navigation/sass/buttons/">
         Buttons Lesson
     </a>
     <a class="ocs__btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/_sass/open-coding/mixins/_grid.scss">

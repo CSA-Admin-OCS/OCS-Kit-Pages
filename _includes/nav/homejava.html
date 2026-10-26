@@ -31,21 +31,21 @@
                     loginLink.style.display = 'none';
 
                     // Display Toolkits"
-                    calendarLink.innerHTML = `<a href="{{site.baseurl}}/portfolio/calendar">Calendar</a>`;
+                    {% if site.data.kit_features contains 'calendar' %}calendarLink.innerHTML = `<a href="{{site.baseurl}}/student/calendar">Calendar</a>`;{% endif %}
                     profileLink.innerHTML = `<a href="{{site.baseurl}}/profile">Profile</a>`;
-                    studentToolkitLink.innerHTML = `<a href="{{site.baseurl}}/portfolio">Student Toolkit</a>`;
+                    {% if site.data.kit_features contains 'assignments' %}studentToolkitLink.innerHTML = `<a href="{{site.baseurl}}/student">Student Toolkit</a>`;{% endif %}
                     // Check for teacher role to display "Teacher Toolkit"
                     const isTeacher = data.roles.some(role => role.name === 'ROLE_TEACHER');
                     if (isTeacher) {
-                        teacherToolkitLink.innerHTML = `<a href="{{site.baseurl}}/teacher">Teacher Toolkit</a>`;
+                        {% if site.data.kit_features contains 'assignments' %}teacherToolkitLink.innerHTML = `<a href="{{site.baseurl}}/teacher">Teacher Toolkit</a>`;{% endif %}
                     }
 
                     // Display logout link
-                    logoutLink.innerHTML = `<a href="{{site.baseurl}}/logoutjava">Logout of Toolkit</a>`;
+                    logoutLink.innerHTML = `<a href="{{site.baseurl}}/logout">Logout of Toolkit</a>`;
                 } else {
                     // User is not authenticated, show signup and login links
                     signupLink.innerHTML = `<a href="{{site.baseurl}}/signup">Signup for Toolkit</a>`;
-                    loginLink.innerHTML = `<a href="{{site.baseurl}}login">Login to Toolkit</a>`;
+                    loginLink.innerHTML = `<a href="{{site.baseurl}}/login">Login to Toolkit</a>`;
 
                     // Hide other links
                     calendarLink.style.display = 'none';

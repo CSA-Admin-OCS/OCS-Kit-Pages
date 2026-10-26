@@ -298,11 +298,27 @@ def feature_urls(catalog, files):
             continue
         for path in files:
             if path.endswith(PAGE_EXTS) and any(matches(path, p) for p in pats):
-                link = front_matter(path).get("permalink")
-                if link and link.startswith("/"):
-                    link = link.rstrip("/") or "/"
+                for link in page_urls(path):
                     urls.setdefault(link, fid)
     return dict(sorted(urls.items()))
+
+
+def page_urls(path):
+    """URLs a page is served at, normalised without a trailing slash ("/guides/" -> "/guides").
+
+    A front-matter permalink wins; otherwise a plain page outside the _underscore dirs is served
+    at its path (dir/index.md -> /dir, dir/page.md -> /dir/page and /dir/page.html)."""
+    link = front_matter(path).get("permalink")
+    if link:
+        return [link.rstrip("/") or "/"] if link.startswith("/") else []
+    if path.endswith(".ipynb") or any(part.startswith("_") for part in path.split("/")):
+        return []
+    stem = "/" + os.path.splitext(path)[0]
+    if stem == "/index":
+        return []
+    if stem.endswith("/index"):
+        return [stem[:-len("/index")]]
+    return [stem, stem + ".html"]
 
 
 # --------------------------------------------------------------------------

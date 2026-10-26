@@ -6,8 +6,8 @@
           kit_off      true when that feature is disabled in this build
 {%- endcomment -%}
 {%- assign kit_url = include.url | split: "?" | first | split: "#" | first | default: "/" -%}
-{%- assign kit_last = kit_url | slice: -1 -%}
-{%- if kit_last == "/" and kit_url.size > 1 -%}{%- assign kit_url = kit_url | remove_last: "/" -%}{%- endif -%}
+{%- comment -%} Drop one trailing slash ("/guides/" -> "/guides"); Liquid 4 has no remove_last. {%- endcomment -%}
+{%- if kit_url.size > 1 -%}{%- assign kit_url = kit_url | append: "#" | replace: "/#", "" | remove: "#" -%}{%- endif -%}
 {%- assign kit_feature = site.data.kit.urls[kit_url] | default: "" -%}
 {%- assign kit_off = false -%}
 {%- if kit_feature != "" and site.data.kit.disabled contains kit_feature -%}{%- assign kit_off = true -%}{%- endif -%}

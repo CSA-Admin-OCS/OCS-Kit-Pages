@@ -61,6 +61,18 @@ Hi! My name is [Your Full Name]
 
 <br>
 
+## Lessons and Guides
+
+> Full courses in Python and Java, plus setup guides for your tools.
+
+<div class="ocs__links">
+    {% include kit/link.html url="/lessons/python/" text="Python" class="ocs__btn iridescent" %}
+    {% include kit/link.html url="/lessons/java/" text="Java" class="ocs__btn alert-green iridescent" %}
+    {% include kit/link.html url="/guides/" text="Guides" class="ocs__btn alert-yellow iridescent" %}
+</div>
+
+<br>
+
 ## Code Runner Lessons
 
 > Foundations in Tech are essential, click my iridescent buttons to see some of my lesson creations.

@@ -151,4 +151,6 @@ minima:
   social_links:
     - { platform: github, user_url: "https://github.com/your-github-username" }
   nav_pages:
+    - lessons/index.md
+    - lessons/guides.md
     - navigation/search.md

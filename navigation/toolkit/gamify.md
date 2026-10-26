@@ -67,57 +67,50 @@ menu: nav/home.html
     }
 </script>
 
+{%- comment -%}
+  Buttons point at game pages this website has (stock and casino simulations have no pages here).
+  The Media Bias Game belongs to the examples feature and hides when that is off.
+{%- endcomment -%}
 <div class="toolkit-buttons">
   <div id="loadingElement" class="loading-container">
       <div class="spinner"></div>
   </div>  
-    <a href="{{site.baseurl}}/stocks/home" class="toolkit-button" data-description="Experience real-time stock market simulation with virtual trading. Monitor popular stocks like Apple, Google, and Microsoft, manage your portfolio, and climb the leaderboard as you learn investment strategies in a risk-free environment." data-authors="Author: NITD+People">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/stocks.png" alt="Simulation Home" />
-    <span class="button-name">Stocks Home</span>
-    <div class="description">
-      <p>Experience real-time stock market simulation with virtual trading. Monitor popular stocks like Apple, Google, and Microsoft, manage your portfolio, and climb the leaderboard as you learn investment strategies in a risk-free environment.</p>
-    </div>
-  </a>
-  <a href="{{site.baseurl}}/gamify/fortuneFinders" class="toolkit-button" data-description="This page contains all the games developed by CSA. It includes an adventure game where you can explore endless opurtunites. Within this game you can learn how to gamble by playing the gambling game or all about stocks and crypto in our investment game!" data-authors="Author: NITD+People">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/fortune.png" alt="Gamify" />
+  <a href="{{site.baseurl}}/gamify/fortuneFindersv1-1" class="toolkit-button" data-description="An adventure game where you explore levels, talk to NPCs and answer CS questions to earn balance." data-authors="Author: NITD+People">
+    <img src="{{site.baseurl}}/images/gamify/lessons/fortune.png" alt="Fortune Finders" />
     <span class="button-name">Fortune Finders</span>
     <div class="description">
-      <p>This page contains all the games developed by CSA. Starting at the adventure game, you can interact with NPCs and answer CS related questions to earn balance. With the balance, you can either gamble it away at the casino game or trade it at stocks. We also have crypto!</p>
+      <p>Start at the airport, interact with NPCs and answer CS related questions to earn balance, then head to Wall Street.</p>
     </div>
   </a>
-  <a href="{{site.baseurl}}/rpg/latest" class="toolkit-button" data-description="Learn the basics of JS and object oriented programming through hands on learning. Dive deep into the world of game coding in this underwater game where you can interact with different oceanic animals such as turtles, fishes, and more." data-authors="Author: Jane Smith">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/rpg.png" alt="RPG Game" />
+  <a href="{{site.baseurl}}/gamify/water" class="toolkit-button" data-description="Learn the basics of JS and object oriented programming through hands on learning. Dive deep into the world of game coding in this underwater game where you can interact with different oceanic animals such as turtles, fishes, and more." data-authors="Author: Jane Smith">
+    <img src="{{site.baseurl}}/images/gamify/lessons/shark.png" alt="RPG Game" />
     <span class="button-name">RPG Game</span>
     <div class="description">
       <p>Learn the basics of JS and object oriented programming through hands on learning. Dive deep into the world of game coding in this underwater game where you can interact with different oceanic animals such as turtles, fishes, and more.</p>
     </div>
   </a>
-  <a href="{{site.baseurl}}/navigation/game" class="toolkit-button" data-description="Explore collaboration resources that facilitate group work and team projects. Access platforms and tools designed to enhance communication, project management, and collective problem-solving." data-authors="Author: Alex Johnson">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/platformer.png" alt="Platformer Game" />
+  <a href="{{site.baseurl}}/assets/js/GameEnginev1/platformer/endplatformer.html" class="toolkit-button" data-description="Jump, shoot and dodge enemies on the End ship in this side-scrolling platformer." data-authors="Author: Alex Johnson">
+    <img src="{{site.baseurl}}/images/gamify/lessons/platformer.png" alt="Platformer Game" />
     <span class="button-name">Platformer Game</span>
     <div class="description">
-      <p>Explore collaboration resources that facilitate group work and team projects. Access platforms and tools designed to enhance communication, project management, and collective problem-solving.</p>
+      <p>Jump, shoot and dodge enemies on the End ship in this side-scrolling platformer.</p>
     </div>
   </a>
 </div>
 
+{%- include kit/url-feature.html url="/media" %}
+{%- unless kit_off %}
 <!-- Second Row of Buttons -->
 <div class="toolkit-buttons">
-  <a href="{{site.baseurl}}/gamify/casinohomepage" class="toolkit-button" data-description="Classic arcade games reimagined for learning coding concepts. Test your reflexes and learn programming tricks at the same time." data-authors="Author: ArcadeDev">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/casinohomepage.png" alt="Casino Game" />
-    <span class="button-name">Casino Game</span>
-    <div class="description">
-      <p>Classic casino games to test your luck and have fun.</p>
-    </div>
-  </a>
-  <a href="{{site.baseurl}}/media" class="toolkit-button" data-description="Engage in simulations that teach real-world applications of coding and software engineering concepts." data-authors="Author: CodeSim Team">
-    <img src="{{site.baseurl}}/images/toolkit-nav-buttons/media.png" alt="Media Game" />
+  <a href="{{site.baseurl}}/media" class="toolkit-button" data-feature="{{ kit_feature }}" data-description="Engage in simulations that teach real-world applications of coding and software engineering concepts." data-authors="Author: CodeSim Team">
+    <img src="{{site.baseurl}}/images/gamify/lessons/media.png" alt="Media Game" />
     <span class="button-name">Media Bias Game</span>
     <div class="description">
       <p>Drag the images into the correct bins (Left, Center, or Right). You have 3 lives!</p>
     </div>
   </a>
 </div>
+{%- endunless %}
 
 <style>
   /* Additional styling for the login prompt */

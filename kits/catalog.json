@@ -162,7 +162,8 @@
         "_includes/lessons/",
         "assets/js/csa-lessons/",
         "assets/lessons/",
-        "images/rps/"
+        "images/rps/",
+        "images/Penguins-jslessons/"
       ]
     },
     "code-runner": {

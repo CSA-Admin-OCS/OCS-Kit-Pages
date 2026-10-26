@@ -7,9 +7,19 @@
 <div class="topbar-lesson">
   <div class="topbar-left">
     <div class="breadcrumbs">
-      <a href="{{ site.baseurl }}/navigation/courses/{{ current_course }}" title="Back to course">
+      {%- case current_course -%}
+        {%- when "csa" -%}{%- assign course_home = "/lessons/java/" -%}
+        {%- when "csp" -%}{%- assign course_home = "/lessons/python/" -%}
+        {%- else -%}{%- assign course_home = "/lessons/" -%}
+      {%- endcase -%}
+      {%- include kit/url-feature.html url=course_home -%}
+      {%- if kit_off %}
+      <i class="fas fa-home"></i>
+      {%- else %}
+      <a href="{{ site.baseurl }}{{ course_home }}" title="Back to course">
         <i class="fas fa-home"></i>
       </a>
+      {%- endif %}
       <i class="fas fa-chevron-right"></i>
       <span>Week {{ current_week }}</span>
       <i class="fas fa-chevron-right"></i>

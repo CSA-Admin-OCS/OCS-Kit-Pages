@@ -1,6 +1,6 @@
 // Feature Manager (/admin/features/): toggle features on both backends, setup guides.
 import { BACKENDS, BACKEND_IDS, MOCK, loadCatalog, getIdentity, getKitPublic, getKitAdmin, setFeature, resetFeature, describeFailure } from './kit-api.js';
-import { SITE, WHERE, esc, md, announce, mockBanner, showGate, buildFeatures, sourceText, backendName, copyText, trapFocus, renderStaff } from './common.js';
+import { SITE, WHERE, esc, md, announce, mockBanner, showGate, buildFeatures, sourceText, backendName, copyText, trapFocus, renderStaff, refreshKitRuntime } from './common.js';
 
 const state = { catalog: null, admin: null, kit: null, features: [], busy: new Set(), results: {}, guideId: null };
 const CONFIRM_LABELS = ['privacy-sensitive', 'needs-api-key', 'third-party-data', 'needs-external-service'];
@@ -207,6 +207,7 @@ async function toggle(id, wantOn, input) {
     const results = await setFeature(id, wantOn);
     state.busy.delete(id);
     const summary = applyResults(results, wantOn ? `Turned on ${f.name}` : `Turned off ${f.name}`);
+    if (BACKEND_IDS.some(b => results[b].ok)) refreshKitRuntime();
     refreshModel();
     const after = feature(id);
     if (summary.okAll && wantOn && after.needsSetup) {
@@ -232,6 +233,7 @@ async function reset(id) {
     const results = await resetFeature(id);
     state.busy.delete(id);
     const summary = applyResults(results, `Reset ${f.name} to the kit default`);
+    if (BACKEND_IDS.some(b => results[b].ok)) refreshKitRuntime();
     refreshModel();
     const after = feature(id);
     if (summary.okAll) summary.html += ` It is now ${esc(enabledText(after).toLowerCase())}.`;
@@ -330,15 +332,24 @@ function stepsSection(f) {
       <p class="ocs__admin-crumbs">Ticks are saved in this browser only, to help you keep track.</p>`;
 }
 
+/** The kit: features: line with this feature added, in the same style the site already uses. */
+function featuresLineWith(id) {
+    const current = SITE.config_features.map(String);
+    const explicit = current.some(x => !/^[+-]/.test(x) && x !== '*');
+    const next = explicit ? [...current.filter(x => x !== id), id] : [...current.filter(x => x !== `-${id}`), `+${id}`];
+    return `  features: [${next.map(x => JSON.stringify(x)).join(', ')}]`;
+}
+
 function buildSection(f) {
     if (f.inBuild) return '';
-    const yaml = `kit:\n  features:\n${[...(SITE.features || []), f.id].map(x => `    - ${x}`).join('\n')}`;
+    const kitLine = SITE.kit ? `  name: ${SITE.kit}\n` : '';
+    const yaml = `kit:\n${kitLine}${featuresLineWith(f.id)}`;
     return `<h3>Add its pages to the website</h3>
       <div class="ocs__admin-result ocs__admin-result--warn">
         <p>This website was built without ${esc(f.name)}'s pages, so turning it on in the backends is not enough. Do one of these:</p>
         <ol>
-          <li>In your website repository, add <code>- ${esc(f.id)}</code> to <code>kit: features:</code> in <code>_config.yml</code>, then commit and push. GitHub rebuilds the site in a few minutes.</li>
-          <li>Or re-run the OCS-in-a-Kit installer and choose this feature (it updates the website and both backends).</li>
+          <li>In your website repository, change <code>features:</code> in the <code>kit:</code> block of <code>_config.yml</code> as shown below, then commit and push. GitHub rebuilds the site in a few minutes. (Running the site on your computer? Run <code>make</code> again.)</li>
+          <li>Or re-run the OCS-in-a-Kit installer with <code>--change-features</code> and choose this feature (it updates the website and both backends).</li>
         </ol>
       </div>` + snippet(yaml, `_config.yml feature list with ${f.name}`);
 }

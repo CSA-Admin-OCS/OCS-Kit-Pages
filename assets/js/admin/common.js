@@ -2,8 +2,15 @@
 import { BACKENDS, BACKEND_IDS, MOCK } from './kit-api.js';
 
 /** Build-time facts about this website, written by the page (never secret values). */
-export const SITE = window.OCS_ADMIN_SITE || { features: [], kit_configured: {}, baseurl: '' };
-if (!Array.isArray(SITE.features)) SITE.features = [];
+export const SITE = window.OCS_ADMIN_SITE || { built: null, config_features: [], kit_configured: {}, baseurl: '' };
+if (!Array.isArray(SITE.built)) SITE.built = null;
+if (!Array.isArray(SITE.config_features)) SITE.config_features = [];
+
+/** Tell the site-wide kit runtime (assets/js/kit-features.js) to drop its cached /api/kit answer. */
+export function refreshKitRuntime() {
+    try { sessionStorage.removeItem('ocs-kit-runtime'); } catch (_) { /* storage off */ }
+    if (window.OCS_KIT && typeof window.OCS_KIT.refresh === 'function') window.OCS_KIT.refresh(true);
+}
 
 export function esc(value) {
     return String(value == null ? '' : value)
@@ -75,7 +82,7 @@ export function buildFeatures(catalog, admin) {
         const r = admin && admin[b];
         if (r && r.ok) r.data.feature_details.forEach(d => ids.add(d.id));
     }
-    const buildList = SITE.features || [];
+    const buildList = SITE.built; // null: build selection unknown, assume the pages are there
     const out = [];
     for (const id of ids) {
         const cat = (catalog.features || {})[id] || {};
@@ -115,8 +122,7 @@ export function buildFeatures(catalog, admin) {
             missingRequired,
             unknownRequired,
             needsSetup: missingRequired.length > 0,
-            // An empty kit.features list in _config.yml means the site was built with every feature.
-            inBuild: buildList.length === 0 || buildList.includes(id) || !!(cat.always_on),
+            inBuild: !buildList || buildList.includes(id) || id === 'core' || !!(cat.always_on),
         });
     }
     const order = ['core', 'general', 'education'];

@@ -30,16 +30,13 @@ const MOCK_FAIL = params.get('mockfail');
 
 // ------------------------------------------------------------------ catalog
 
-let catalogPromise = null;
-/** The kit catalog: /kits/catalog.json when this site serves it, else the bundled copy. */
+/**
+ * The kit catalog (names, descriptions, labels, setup guides). kits/ is excluded from the
+ * site build, so the public parts are bundled in catalog-fallback.js (regenerate it when
+ * kits/catalog.json changes; see ADMIN-DASHBOARD-MERGE.md).
+ */
 export function loadCatalog() {
-    if (!catalogPromise) {
-        catalogPromise = fetch(`${BASEURL}/kits/catalog.json`, { cache: 'no-cache' })
-            .then(r => (r.ok ? r.json() : null))
-            .then(c => (c && c.features && c.labels ? c : FALLBACK_CATALOG))
-            .catch(() => FALLBACK_CATALOG);
-    }
-    return catalogPromise;
+    return Promise.resolve(FALLBACK_CATALOG);
 }
 
 // ------------------------------------------------------------------ http helpers

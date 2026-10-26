@@ -7,11 +7,16 @@ an Admin session.
 <script>
 window.OCS_ADMIN_SITE = {
   baseurl: {{ site.baseurl | jsonify }},
-  kit_name: {{ site.kit.name | default: "" | jsonify }},
-  features: {{ site.kit.features | jsonify }} || [],
+  kit: {{ site.data.kit.kit | default: site.kit.name | default: "" | jsonify }},
+  kit_name: {{ site.data.kit.name | default: site.kit.name | default: "" | jsonify }},
+  // Features whose pages are in this build (scripts/apply_kit.py -> _data/kit.json); null = unknown
+  built: {{ site.data.kit.enabled | default: site.kit_enabled | jsonify }},
+  // The kit: features: setting as written in _config.yml (preset modifiers or an explicit list)
+  config_features: {{ site.kit.features | jsonify }},
   kit_configured: {
     {%- assign first = true -%}
     {%- for pair in site.kit -%}
+      {%- if pair[0] == "name" or pair[0] == "features" -%}{%- continue -%}{%- endif -%}
       {%- assign v = pair[1] -%}
       {%- if v == nil or v == "" or v == empty -%}{%- assign set = false -%}{%- else -%}{%- assign set = true -%}{%- endif -%}
       {%- unless first -%},{%- endunless -%}{{ pair[0] | jsonify }}: {{ set }}

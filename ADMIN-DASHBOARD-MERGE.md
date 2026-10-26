@@ -26,35 +26,34 @@ Removed: `navigation/authentication/admin.md` (the old `/admin` page only showed
 - `_sass/open-coding/elements/forms/_main.scss`: `fields` and `labels` imports
 - `_sass/open-coding/elements/typography/_main.scss`: `truncate` import
 
-## Edits for you to apply at merge (files this branch did not touch)
+## Alignment with main (merged in `baaef6b`)
 
-1. **Nav link** (shared nav include / runtime nav script): show "Admin" linking to
-   `{{ site.baseurl }}/admin/` for Admins only (Spring `ROLE_ADMIN` or Flask `role == "Admin"`).
-   Optional: for staff, a "Features" link to `/admin/features/` (they get a read-only list).
-   The pages themselves already block everyone else, so a visible link is harmless.
-2. **`scripts/apply_kit.py`**: `navigation/admin/**`, `_includes/admin/**`, `assets/js/admin/**` and
-   `_sass/open-coding/admin-dashboard.scss` belong to the `core` feature (never pruned).
-3. **Catalog on the site**: the pages first try `{{ site.baseurl }}/kits/catalog.json` and fall back to
-   `assets/js/admin/catalog-fallback.js`. If `kits/` is in `_config.yml` `exclude`, either keep it
-   copied or regenerate the fallback whenever the catalog changes:
+- The nav **Admin** link already exists on main (`assets/js/api/login.js`, `data-feature-admin`,
+  shown to Admins by `assets/js/kit-features.js`). It points at `/admin`, which serves `/admin/`.
+- "Is this feature's website part built?" comes from `site.data.kit.enabled` (written by
+  `scripts/apply_kit.py` into `_data/kit.json`; falls back to `site.kit_enabled`). The rebuild
+  snippet keeps the site's `kit: features:` style (`["+id"]` modifiers, or appends to an explicit list).
+- After every successful change the Feature Manager clears the kit runtime cache
+  (`sessionStorage["ocs-kit-runtime"]`) and calls `OCS_KIT.refresh(true)`, so the nav updates at once.
+- Admin pages are not claimed by any feature in `kits/catalog.json`, so `apply_kit.py` treats them as
+  core and never prunes them (checked: no `admin` path in `_config.kit.yml` exclude or `_data/kit.json` urls).
+- `kits/` is excluded from the build, so the pages use the bundled `assets/js/admin/catalog-fallback.js`.
+  Regenerate it whenever `kits/catalog.json` changes names, descriptions, labels or setup guides:
 
-   ```bash
-   python3 - <<'EOF'
-   import json
-   c = json.load(open('kits/catalog.json'))
-   keep = {k: c[k] for k in ('version', 'feature_management', 'roles', 'categories', 'labels')}
-   keep['kits'] = {k: {kk: v[kk] for kk in ('name', 'description', 'features', 'roles', 'signup_role') if kk in v} for k, v in c['kits'].items()}
-   keep['features'] = {k: {kk: v[kk] for kk in ('name', 'category', 'labels', 'always_on', 'description', 'setup') if kk in v} for k, v in c['features'].items()}
-   src = open('assets/js/admin/catalog-fallback.js').read()
-   head = src[:src.index('export default')]
-   open('assets/js/admin/catalog-fallback.js', 'w').write(head + 'export default ' + json.dumps(keep, indent=2, ensure_ascii=False) + ';\n')
-   EOF
-   ```
-4. **`_config.yml`**: nothing required. The pages read `site.kit.features` (empty list = every
-   feature's pages are in the build) to say when a feature needs a website rebuild, and report only
-   whether each `site.kit.*` key is set (never its value).
-5. **Backend CORS**: previews on another port (e.g. 4700) are blocked by the backends' CORS allow
-   list; the real site origin already works.
+  ```bash
+  python3 - <<'PY'
+  import json
+  c = json.load(open('kits/catalog.json'))
+  keep = {k: c[k] for k in ('version', 'feature_management', 'roles', 'categories', 'labels')}
+  keep['kits'] = {k: {kk: v[kk] for kk in ('name', 'description', 'features', 'roles', 'signup_role') if kk in v} for k, v in c['kits'].items()}
+  keep['features'] = {k: {kk: v[kk] for kk in ('name', 'category', 'labels', 'always_on', 'description', 'setup') if kk in v} for k, v in c['features'].items()}
+  p = 'assets/js/admin/catalog-fallback.js'
+  src = open(p).read()
+  open(p, 'w').write(src[:src.index('export default')] + 'export default ' + json.dumps(keep, indent=2, ensure_ascii=False) + ';\n')
+  PY
+  ```
+- Backend CORS: previews on another port (e.g. 4700) are blocked by the backends' allow list; the
+  real site origin (4500 locally) works.
 
 ## Backend contract the pages expect
 

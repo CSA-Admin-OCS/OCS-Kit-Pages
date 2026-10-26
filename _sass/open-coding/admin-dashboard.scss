@@ -1,0 +1,457 @@
+// Page-scoped styles for the Admin Dashboard (/admin/) and Feature Manager (/admin/features/).
+// Composes the shared ocs__ grammar (ocs__container, ocs__card, ocs__stats, ocs__toggle,
+// ocs__status-pill, ocs__modal, ocs__btn) and only adds what that grammar cannot express.
+// Colors come from the user-preference tokens so light/dark/custom themes all work; state
+// colors are always paired with a text label and a glyph, never color alone.
+
+.ocs__admin {
+  --adm-ok: var(--pref-success-color, var(--pref-accent-color));
+  --adm-warn: var(--pref-warning-color, #d97706);
+  --adm-bad: var(--pref-error-color, #dc2626);
+  --adm-line: color-mix(in srgb, var(--pref-text-color) 16%, transparent);
+  --adm-soft: color-mix(in srgb, var(--pref-text-color) 5%, var(--panel));
+  --adm-muted: color-mix(in srgb, var(--pref-text-color) 72%, var(--pref-bg-color));
+
+  max-width: 1100px;
+  margin: 0 auto;
+  color: var(--pref-text-color);
+
+  a { color: var(--pref-accent-color); }
+
+  code {
+    padding: 0.1em 0.35em;
+    border-radius: 0.3em;
+    background: var(--adm-soft);
+    border: 1px solid var(--adm-line);
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--pref-accent-color);
+    outline-offset: 2px;
+  }
+
+  [hidden] { display: none !important; }
+}
+
+.ocs__admin-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ocs__admin-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1.25rem;
+
+  h1 { margin: 0.25rem 0 0; font-size: 1.75rem; line-height: 1.2; }
+  p { margin: 0.35rem 0 0; color: var(--adm-muted); max-width: 60ch; }
+  .ocs__badge { margin-bottom: 0; }
+}
+
+.ocs__admin-crumbs {
+  font-size: 0.85rem;
+  color: var(--adm-muted);
+}
+
+.ocs__admin-banner,
+.ocs__admin-status {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--adm-line);
+  border-left-width: 4px;
+  border-radius: 0.6rem;
+  background: var(--adm-soft);
+  line-height: 1.5;
+}
+
+.ocs__admin-banner { border-left-color: var(--pref-accent-color); }
+.ocs__admin-status--ok { border-left-color: var(--adm-ok); }
+.ocs__admin-status--warn { border-left-color: var(--adm-warn); }
+.ocs__admin-status--error { border-left-color: var(--adm-bad); }
+.ocs__admin-status--info { border-left-color: var(--pref-accent-color); }
+
+.ocs__admin-gate {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+
+  h2 { margin-top: 0; }
+  p { color: var(--adm-muted); max-width: 52ch; margin: 0.5rem auto 1.25rem; }
+}
+
+// ---------------------------------------------------------------- overview
+
+.ocs__admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  > .ocs__card { margin-bottom: 0; display: flex; flex-direction: column; }
+}
+
+.ocs__admin-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+
+  dt { color: var(--adm-muted); font-size: 0.85rem; }
+  dd { margin: 0; font-weight: 600; text-align: right; }
+}
+
+.ocs__admin-big {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.ocs__admin-card-foot {
+  margin-top: auto;
+  padding-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ocs__admin-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  a {
+    display: block;
+    height: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--adm-line);
+    border-radius: 0.6rem;
+    background: var(--adm-soft);
+    text-decoration: none;
+    color: var(--pref-text-color);
+
+    &:hover { border-color: var(--pref-accent-color); }
+  }
+
+  strong { display: block; color: var(--pref-accent-color); }
+  span { display: block; font-size: 0.85rem; color: var(--adm-muted); margin-top: 0.2rem; }
+}
+
+// ---------------------------------------------------------------- pills
+
+.ocs__admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--adm-line);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  background: var(--adm-soft);
+
+  &--ok { border-color: var(--adm-ok); color: var(--pref-text-color); background: color-mix(in srgb, var(--adm-ok) 16%, var(--panel)); }
+  &--warn { border-color: var(--adm-warn); color: var(--pref-text-color); background: color-mix(in srgb, var(--adm-warn) 18%, var(--panel)); }
+  &--bad { border-color: var(--adm-bad); color: var(--pref-text-color); background: color-mix(in srgb, var(--adm-bad) 16%, var(--panel)); }
+  &--on { border-color: var(--pref-accent-color); background: color-mix(in srgb, var(--pref-accent-color) 16%, var(--panel)); }
+  &--off, &--muted { color: var(--adm-muted); }
+}
+
+// ---------------------------------------------------------------- feature manager
+
+.ocs__admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+
+  .ocs__input { min-width: 0; flex: 1 1 220px; }
+  select.ocs__input {
+    flex: 0 1 200px;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--adm-line);
+    border-radius: 0.5rem;
+    background: var(--panel);
+    color: var(--pref-text-color);
+    font: inherit;
+  }
+}
+
+.ocs__admin-category {
+  margin-bottom: 2rem;
+
+  > h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+  > p { margin: 0 0 1rem; color: var(--adm-muted); }
+}
+
+.ocs__admin-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ocs__admin-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  height: 100%;
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--adm-line);
+  border-radius: 0.9rem;
+  background: var(--panel);
+
+  &--on { border-color: color-mix(in srgb, var(--pref-accent-color) 55%, var(--adm-line)); }
+
+  h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; }
+  p { margin: 0; font-size: 0.9rem; color: var(--adm-muted); line-height: 1.5; }
+}
+
+.ocs__admin-feature-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .ocs__toggle { flex-shrink: 0; }
+  .ocs__toggle-label { font-size: 0.85rem; font-weight: 600; min-width: 2.2em; }
+}
+
+.ocs__admin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.ocs__admin-backends {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0 0;
+  border-top: 1px solid var(--adm-line);
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+
+  li { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+}
+
+.ocs__admin-feature-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.ocs__admin-result {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--adm-line);
+  border-left-width: 4px;
+  background: var(--adm-soft);
+
+  &--ok { border-left-color: var(--adm-ok); }
+  &--warn { border-left-color: var(--adm-warn); }
+  &--error { border-left-color: var(--adm-bad); }
+  ul { margin: 0.25rem 0 0; padding-left: 1.1rem; }
+}
+
+// Label chips: tooltip on hover AND keyboard focus; the description is also in the
+// accessible name, so screen readers get it without the tooltip.
+.ocs__admin-label {
+  position: relative;
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 1px dashed var(--adm-line);
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--adm-muted);
+  cursor: help;
+
+  &--alert { border-style: solid; border-color: var(--adm-warn); color: var(--pref-text-color); }
+
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 20;
+    width: max-content;
+    max-width: min(260px, 60vw);
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--adm-line);
+    background: var(--pref-text-color);
+    color: var(--pref-bg-color);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    white-space: normal;
+    pointer-events: none;
+    display: none;
+  }
+
+  &:hover::after,
+  &:focus::after { display: block; }
+}
+
+// ---------------------------------------------------------------- guide dialog
+
+.ocs__admin-dialog {
+  z-index: 2000;
+  align-items: flex-start;
+
+  .ocs__modal-card {
+    max-width: 50rem;
+    max-height: none;
+    margin: 2vh auto;
+    padding: 1.5rem;
+    background: var(--pref-bg-color);
+    color: var(--pref-text-color);
+    border: 1px solid var(--adm-line);
+  }
+
+  h2 { margin: 0; font-size: 1.35rem; }
+  h3 { margin: 1.5rem 0 0.5rem; font-size: 1rem; }
+
+  @media (max-width: 600px) {
+    padding: 0;
+
+    .ocs__modal-card {
+      margin: 0;
+      min-height: 100vh;
+      border-radius: 0;
+      padding: 1rem;
+    }
+  }
+}
+
+.ocs__admin-confirm .ocs__modal-card { max-width: 34rem; }
+
+.ocs__admin-settings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+
+  > li {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--adm-line);
+    border-radius: 0.6rem;
+    background: var(--adm-soft);
+  }
+
+  p { margin: 0.35rem 0 0; font-size: 0.9rem; line-height: 1.5; }
+}
+
+.ocs__admin-setting-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+
+  code { font-weight: 700; }
+}
+
+.ocs__admin-snippet {
+  position: relative;
+  margin: 0.5rem 0;
+
+  pre {
+    margin: 0;
+    padding: 0.75rem 6rem 0.75rem 0.9rem;
+    border: 1px solid var(--adm-line);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--pref-text-color) 8%, var(--pref-bg-color));
+    color: var(--pref-text-color);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
+  }
+
+  .ocs__btn {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+  }
+}
+
+.ocs__admin-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+
+  label {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.2rem;
+    accent-color: var(--pref-accent-color);
+  }
+}
+
+.ocs__admin-where {
+  margin: 1rem 0 0.25rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ocs__admin-readonly {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 0.5rem;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--adm-line);
+    border-radius: 0.5rem;
+    background: var(--adm-soft);
+  }
+}

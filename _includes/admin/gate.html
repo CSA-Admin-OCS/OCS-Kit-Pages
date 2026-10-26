@@ -1,0 +1,45 @@
+{%- comment -%}
+Shared top of the admin pages: build-time site facts for the JS (booleans only, never values),
+the mock banner, the live status line, and the sign-in / no-access panels. The page content
+goes in #admin-gate-content, which stays hidden (and empty of data) until the backends confirm
+an Admin session.
+{%- endcomment -%}
+<script>
+window.OCS_ADMIN_SITE = {
+  baseurl: {{ site.baseurl | jsonify }},
+  kit: {{ site.data.kit.kit | default: site.kit.name | default: "" | jsonify }},
+  kit_name: {{ site.data.kit.name | default: site.kit.name | default: "" | jsonify }},
+  // Features whose pages are in this build (scripts/apply_kit.py -> _data/kit.json); null = unknown
+  built: {{ site.data.kit.enabled | default: site.kit_enabled | jsonify }},
+  // The kit: features: setting as written in _config.yml (preset modifiers or an explicit list)
+  config_features: {{ site.kit.features | jsonify }},
+  kit_configured: {
+    {%- assign first = true -%}
+    {%- for pair in site.kit -%}
+      {%- if pair[0] == "name" or pair[0] == "features" -%}{%- continue -%}{%- endif -%}
+      {%- assign v = pair[1] -%}
+      {%- if v == nil or v == "" or v == empty -%}{%- assign set = false -%}{%- else -%}{%- assign set = true -%}{%- endif -%}
+      {%- unless first -%},{%- endunless -%}{{ pair[0] | jsonify }}: {{ set }}
+      {%- assign first = false -%}
+    {%- endfor -%}
+  }
+};
+</script>
+<p id="admin-mock" class="ocs__admin-banner" role="note" hidden></p>
+<p id="admin-status" class="ocs__admin-status" role="status" aria-live="polite" hidden></p>
+
+<div id="admin-gate-loading" class="ocs__card ocs__admin-gate">
+  <p>Checking your account&hellip;</p>
+</div>
+
+<div id="admin-gate-signin" class="ocs__card ocs__admin-gate" hidden>
+  <h2>Sign in as an Admin</h2>
+  <p>This page is for the site's Admins. Sign in with an Admin account to manage users and features.</p>
+  <a class="ocs__btn accent fill" href="{{ site.baseurl }}/login">Sign in</a>
+</div>
+
+<div id="admin-gate-denied" class="ocs__card ocs__admin-gate" hidden>
+  <h2>You need an Admin account</h2>
+  <p>You are signed in as <strong id="admin-gate-denied-role">a regular user</strong>. Only Admins can open the admin dashboard or turn features on and off. Ask your site's Admin if you need a feature.</p>
+  <a class="ocs__btn accent" href="{{ site.baseurl }}/">Back to the home page</a>
+</div>

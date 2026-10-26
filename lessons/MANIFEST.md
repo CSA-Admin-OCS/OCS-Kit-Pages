@@ -4,11 +4,21 @@ published: false
 # Education kit lessons: manifest
 
 Branch `education-lessons`. Everything below is new in this branch unless marked *edit*.
-Register these paths in `kits/catalog.json` when merging. Feature ids: **lessons** for all of it.
+Feature id: **lessons** for all of it. These entries are already added to the `lessons` feature's
+`pages` list in `kits/catalog.json` on this branch (`make kit-check` passes, no path claimed twice):
+
+```json
+"lessons/", "_notebooks/Lessons/", "_notebooks/Guides/", "_posts/Guides/",
+"_includes/lessons/", "assets/js/csa-lessons/", "assets/lessons/", "images/rps/"
+```
+
+Derived outputs (`_posts/Lessons*` from `_notebooks/Lessons/`) are excluded automatically.
+`_sass/open-coding/csa-unit2-interactive.scss` stays **core** on purpose: it is imported by the core
+`_main.scss`, so excluding it would break the stylesheet; it only adds `.u2-*` classes.
 The lessons also *use* the existing **code-runner** feature (cells marked `CODE_RUNNER` render as
 runners; Python/Java runners need the kit backend). No game-engine lessons were imported.
 
-## Supporting files (feature: lessons)
+## Supporting files (feature: lessons unless marked core)
 
 | Path | Purpose |
 |---|---|
@@ -20,8 +30,8 @@ runners; Python/Java runners need the kit backend). No game-engine lessons were 
 | `lessons/_tools/import_lessons.py` | re-runnable import + cleaning tool (`python3 lessons/_tools/import_lessons.py <upstream pages clone>`); Jekyll ignores `_tools` |
 | `_includes/lessons/course-index.html` | lists pages by `lesson_course`, grouped by `lesson_unit`, ordered by `lesson_order` (kit `ocs__card`/`ocs__table` classes) |
 | `assets/js/csa-lessons/unit2-interactives.js` | lesson widgets (`u2-card`: MCQ, trace, order, fill) used by Java units 2-4 |
-| `_sass/open-coding/csa-unit2-interactive.scss` | styles for those widgets, built on the kit's sass mixins/variables |
-| `_sass/open-coding/_main.scss` | *edit*: one added line `@import "csa-unit2-interactive";` |
+| `_sass/open-coding/csa-unit2-interactive.scss` | (core) styles for those widgets, built on the kit's sass mixins/variables |
+| `_sass/open-coding/_main.scss` | (core) *edit*: one added line `@import "csa-unit2-interactive";` |
 | `assets/lessons/java/3-7_bank.zip` | Maven starter project for Java 3.07 homework (build output removed) |
 | `images/rps/{rock.jpg,paper.jpeg,scissors.jpeg}` | images used by the VS Code guide's interactive example |
 

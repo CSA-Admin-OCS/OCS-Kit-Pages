@@ -154,7 +154,15 @@
         "images/webdev/",
         "images/kernels/",
         "images/notebooks/",
-        "images/javaml/"
+        "images/javaml/",
+        "lessons/",
+        "_notebooks/Lessons/",
+        "_notebooks/Guides/",
+        "_posts/Guides/",
+        "_includes/lessons/",
+        "assets/js/csa-lessons/",
+        "assets/lessons/",
+        "images/rps/"
       ]
     },
     "code-runner": {

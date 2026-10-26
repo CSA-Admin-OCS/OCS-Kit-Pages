@@ -7,23 +7,29 @@ menu: nav/homejava.html
 show_reading_time: false
 ---
 
+{%- comment -%}
+  Student tracking lives in the Analytics Dashboard; the card hides when analytics is off.
+{%- endcomment -%}
 <div class="container">
-    <div class="student-management glowOnHover"
-        onclick="location.href='{{site.baseurl}}/teacher-toolkit/period1';" style="cursor: pointer;">
+    {%- include kit/url-feature.html url="/analytics-dashboard" %}
+    {%- unless kit_off %}
+    <div class="student-management glowOnHover" data-feature="{{ kit_feature }}"
+        onclick="location.href='{{site.baseurl}}/analytics-dashboard';" style="cursor: pointer;">
         <div class="student-management-image">
             <img src="{{site.baseurl}}/images/toolkit-nav-buttons/studentmanagement.png" alt="student-management" />
         </div>
         <div class="student-management-details">
             <h3>Student Management</h3>
-            <p>This tool lets you:</p>
+            <p>The Analytics Dashboard lets you:</p>
             <ul>
-                <li>Track students at each table per period</li>
-                <li>See what each student is doing and monitor assigned tasks</li>
+                <li>View students' GitHub activity: commits, issues and pull requests</li>
                 <li>Track the progress of each student</li>
-                <li>View students' GitHub activity</li>
+                <li>See predicted grades based on real contributions</li>
+                <li>Follow skill growth over time</li>
             </ul>
         </div>
     </div>
+    {%- endunless %}
 </div>
 
 <style>

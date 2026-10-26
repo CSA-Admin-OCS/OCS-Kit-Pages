@@ -242,6 +242,7 @@
         "_layouts/toolkit.html",
         "_layouts/sprint.html",
         "_includes/toolkit/",
+        "images/toolkit-nav-buttons/",
         "_includes/grading-feedback.html"
       ],
       "notes": "Submit buttons/forms (_includes/lesson-submit*.html, challenge-submit-button.html) stay core and render nothing when assignments is off."

@@ -1,5 +1,5 @@
 ---
-layout: fortunefinders
+layout: opencs
 title: Media Bias Game
 permalink: /media
 ---

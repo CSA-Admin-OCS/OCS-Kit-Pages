@@ -17,7 +17,7 @@ any school or organization can run. One installer sets everything up.
 | **Education** | A CS classroom: lessons, code runners, assignments, AI tutor, hall pass | Admin, Teacher, Student |
 | **Business** | An organization serving its own users | Admin, Manager, Member |
 
-Admins can turn features on and off later from the **Admin** dashboard.
+Your choice is not final. Admins can switch to another kit or turn single features on and off at any time from **Admin → Manage features**, with no website rebuild. Accounts and data are kept; turned-off features are hidden, not deleted.
 
 ## Install
 

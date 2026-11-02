@@ -30,8 +30,8 @@ Removed: `navigation/authentication/admin.md` (the old `/admin` page only showed
 
 - The nav **Admin** link already exists on main (`assets/js/api/login.js`, `data-feature-admin`,
   shown to Admins by `assets/js/kit-features.js`). It points at `/admin`, which serves `/admin/`.
-- "Is this feature's website part built?" comes from `site.data.kit.enabled` (written by
-  `scripts/apply_kit.py` into `_data/kit.json`; falls back to `site.kit_enabled`). The rebuild
+- "Is this feature's website part built?" comes from `site.data.kit.built` (written by
+  `scripts/apply_kit.py` into `_data/kit.json`; falls back to `site.kit_enabled`). In `kit.build: all` every feature is built, so no rebuild message appears. The rebuild
   snippet keeps the site's `kit: features:` style (`["+id"]` modifiers, or appends to an explicit list).
 - After every successful change the Feature Manager clears the kit runtime cache
   (`sessionStorage["ocs-kit-runtime"]`) and calls `OCS_KIT.refresh(true)`, so the nav updates at once.

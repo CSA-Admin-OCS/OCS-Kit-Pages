@@ -50,6 +50,7 @@ jobs:
         run: |
           source venv/bin/activate
           python scripts/apply_kit.py --check  # catalog paths, ids, overlaps (fails the build on errors)
+          node scripts/test_kit_runtime.js     # kit.build modes and the effective feature state
           python scripts/apply_kit.py --list   # log which features this site is built with
           python scripts/apply_kit.py --no-mock-fixtures  # -> _config.kit.yml, _data/kit_features.json, _data/kit.json
 

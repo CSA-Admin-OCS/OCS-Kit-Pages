@@ -7,7 +7,8 @@ PYTHON := venv/bin/python3
 JEKYLL_CONFIG ?= _config.yml$(comma)_config.kit.yml$(if $(wildcard _config.local.yml),$(comma)_config.local.yml)
 
 # Kit selection: defaults to _config.yml kit.name/kit.features; override per run with
-#   make KIT=vanilla            make FEATURES=+finance-sim,-social
+#   make KIT=vanilla            make FEATURES=+finance-sim,-social   (both mean a trimmed build)
+#   make KIT_BUILD=kit          overrides kit.build (all | kit)
 KIT ?=
 FEATURES ?=
 KIT_ARGS = $(if $(KIT),--kit $(KIT)) $(if $(FEATURES),--features=$(FEATURES)) $(if $(KIT_BUILD),--build $(KIT_BUILD))
@@ -309,6 +310,9 @@ kit-list:
 
 kit-check:
 	@$(PYTHON) scripts/apply_kit.py --check
+
+kit-test:
+	@node scripts/test_kit_runtime.js
 $(DESTINATION_DIRECTORY)/%_IPYNB_2_.md: _notebooks/%.ipynb
 	@$(PYTHON) scripts/convert_notebooks.py "$<"
 

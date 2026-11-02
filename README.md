@@ -36,8 +36,9 @@ kit:
     spring: "https://spring.example.com"   # deployed Spring backend
     flask_local: "http://localhost:8587"   # used when the site runs on localhost
     spring_local: "http://localhost:8585"
-  name: business          # vanilla | education | business
+  name: education         # vanilla | education | business
   features: []            # [] = the preset; see "Choosing a kit"
+  build: all              # all | kit; see "Build modes"
 ```
 
 `assets/js/api/config.js` reads `kit.backend` at build time, so every page that imports `pythonURI` / `javaURI` uses your servers. Your backends must allow your Pages origin in their CORS settings.
@@ -63,7 +64,7 @@ The server address is printed when `make` finishes (default `http://localhost:45
 
 ## Choosing a kit
 
-The site ships in three presets. Pick one with `kit.name` in `_config.yml`:
+The site ships in three presets. An Admin picks one at **Admin > Manage features > Start from a kit** with no rebuild; `kit.name` in `_config.yml` is the fallback for when no backend answers:
 
 | Kit | For | Features |
 | --- | --- | --- |
@@ -71,7 +72,18 @@ The site ships in three presets. Pick one with `kit.name` in `_config.yml`:
 | `education` | A CS classroom | core, lessons, code-runner, assignments, game-engine, ai-chatbot, ai-grading, calendar, analytics, hallpass, social, resume |
 | `business` | Organizations (no students) | core, ai-chatbot, social, calendar, analytics, resume |
 
-Pages of features that are off are not built (and their notebooks/projects are not converted), and menus hide links to them. Core (home, login, signup, profile, blog, search, admin) is always on.
+Menus hide links to features that are off and their pages show a "This feature is turned off" message. Core (home, login, signup, profile, blog, search, admin) is always on.
+
+### Build modes
+
+`kit.build` in `_config.yml` decides which pages this build contains:
+
+| `kit.build` | What ships | Trade-off |
+| --- | --- | --- |
+| `all` (default) | Every feature's pages, notebooks and projects | Admins switch kits and features from the website with no rebuild. A larger site. |
+| `kit` | Only the pages of `kit.name` / `kit.features` | A smaller site, but turning on any other feature needs a rebuild (the Feature Manager says so). |
+
+`make KIT=vanilla` and `apply_kit.py --kit vanilla` build exactly that kit, so they imply `kit`; add `KIT_BUILD=all` or `--build all` to keep every page. Hidden pages are public static files in `all` mode: the switch controls what people see, and the backends enforce access.
 
 | Feature | Category | Labels | Vanilla | Education | Business | Main paths |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -109,9 +121,20 @@ kit:
 
 1. Edit `kit.name` / `kit.features`.
 2. Preview the result: `python scripts/apply_kit.py --list` (or `make kit-list`).
-3. Run `make` (local) or push (GitHub Pages). For a one-off build: `make KIT=vanilla` or `make FEATURES=+finance-sim,-social`.
+3. Run `make` (local) or push (GitHub Pages). For a one-off trimmed build: `make KIT=vanilla` or `make FEATURES=+finance-sim,-social`.
 
-Admins can also switch features off at run time from the backends: every page asks `{javaURI}/api/kit` (then `{pythonURI}/api/kit`), caches the answer for 5 minutes and hides links of features that are off. If no backend answers, the build-time selection is used.
+### Run time
+
+Every page asks both `{javaURI}/api/kit` and `{pythonURI}/api/kit` and caches the answer for 60 seconds (`assets/js/kit-features.js`). Changes in the Feature Manager apply at once for that Admin.
+
+- If both answer, a feature is on only if both say on, and the admin pages show the disagreement. If one answers, the other's last known answer still counts.
+- **During an outage** the last known answers stay in force (kept in the browser), so what an Admin turned off stays off.
+- **If no answer was ever seen**, menus follow `kit.name` / `kit.features` and no page is replaced.
+- **Side effects fail closed.** Trackers, comment and social widgets, the camera and outside APIs start only after the check passes, and stop if the feature goes off. Put such markup in `<template data-kit-load="my-feature">`, or check `OCS_KIT.canRun('my-feature')` in scripts. Requests that belong to a feature are listed in `RULES` in `kit-features.js`.
+
+`?mock=1` on the admin pages uses sample data for testing. It works only on `localhost` and `127.0.0.1`, never lets a side effect run, and CI leaves the sample data out of the site (`--no-mock-fixtures`).
+
+Tests: `make kit-test` (no dependencies) and `scripts/tests/kit_browser.js` (playwright-core, see its header).
 
 ## Adding a new feature
 
@@ -120,7 +143,7 @@ Admins can also switch features off at run time from the backends: every page as
 1. Add the feature to the canonical catalog in the OCS-Kit repository (id, name, category, labels, kits), then copy it here: `python scripts/apply_kit.py --sync-canonical ../OCS-Kit/kits/catalog.json`.
 2. In `kits/catalog.json`, list the feature's files under `"pages"`: folders end with `/`, globs are allowed. Notebooks (`_notebooks/...`) and projects (`_projects/...`) also exclude their generated output.
 3. Run `python scripts/apply_kit.py --check`: it fails on unknown ids, paths that do not exist, paths claimed by two features and drift from the canonical catalog. CI runs the same check.
-4. Links in shared pages: use the `kit/link.html` include (`include kit/link.html url="/my-page" text="My page"`), or wrap markup in an `unless site.data.kit.disabled contains 'my-feature'` block. Mark menu items with `data-feature="my-feature"` so run-time switches hide them too (links to the feature's pages are marked automatically).
+4. Links in shared pages: use the `kit/link.html` include (`include kit/link.html url="/my-page" text="My page"`). Mark other markup with `data-feature="my-feature"` so run-time switches hide it (links to the feature's pages are marked automatically). `site.data.kit.disabled` only lists features left out of a `kit.build: kit` build, and is empty in `all` mode, so it must not be the only guard for anything with side effects.
 
 ## Where things live
 

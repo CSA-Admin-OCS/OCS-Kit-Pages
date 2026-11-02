@@ -1,0 +1,8 @@
+{%- comment -%}
+  Read-only stand-in for a runner: shown when include.feature is off. Hidden while the feature is
+  on (include.hidden); assets/js/kit-features.js toggles it from the live state.
+{%- endcomment -%}
+<div class="runner-disabled" data-feature-off="{{ include.feature }}"{% if include.hidden %} hidden{% endif %}>
+{%- if include.challenge %}<p>{{ include.challenge }}</p>{% endif %}
+<pre><code>{{ include.code | escape }}</code></pre>
+</div>

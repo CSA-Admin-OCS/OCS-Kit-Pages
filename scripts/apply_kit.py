@@ -317,10 +317,22 @@ def front_matter(path):
     if not m:
         return {}
     fm = {}
+    block = None
     for line in m.group(1).splitlines():
         mm = re.match(r"^(permalink|title):\s*(.*?)\s*$", line)
         if mm:
             fm[mm.group(1)] = mm.group(2).strip("\"'")
+        if re.match(r"^\S", line):
+            block = "courses" if re.match(r"^courses:\s*$", line) else None
+            mm = re.match(r"^courses:\s*\{(.*)\}", line)  # courses: { csp: {week: 1}, csa: {week: 2} }
+            if mm:
+                fm["courses"] = re.findall(r"(\w+):\s*\{", mm.group(1))
+        elif block:
+            mm = re.match(r"^  (\w+):", line)
+            if mm:
+                fm.setdefault("courses", []).append(mm.group(1))
+    if len(fm.get("courses", [])) < 2:
+        fm.pop("courses", None)  # a single course is not split
     return fm
 
 
@@ -343,9 +355,14 @@ def page_urls(path):
 
     A front-matter permalink wins; otherwise a plain page outside the _underscore dirs is served
     at its path (dir/index.md -> /dir, dir/page.md -> /dir/page and /dir/page.html)."""
-    link = front_matter(path).get("permalink")
+    fm = front_matter(path)
+    link = fm.get("permalink")
     if link:
-        return [link.rstrip("/") or "/"] if link.startswith("/") else []
+        if not link.startswith("/"):
+            return []
+        link = link.rstrip("/") or "/"
+        # scripts/split_multi_course_files.py also serves multi-course files at <permalink>/<course>
+        return [link] + [f"{link}/{course}" for course in fm.get("courses", [])]
     if path.endswith(".ipynb") or any(part.startswith("_") for part in path.split("/")):
         return []
     stem = "/" + os.path.splitext(path)[0]

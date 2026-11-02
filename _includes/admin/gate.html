@@ -9,14 +9,16 @@ window.OCS_ADMIN_SITE = {
   baseurl: {{ site.baseurl | jsonify }},
   kit: {{ site.data.kit.kit | default: site.kit.name | default: "" | jsonify }},
   kit_name: {{ site.data.kit.name | default: site.kit.name | default: "" | jsonify }},
+  // kit.build: all = every feature's pages ship, kit = only the selected ones (needs a rebuild to add)
+  build: {{ site.data.kit.build | default: "kit" | jsonify }},
   // Features whose pages are in this build (scripts/apply_kit.py -> _data/kit.json); null = unknown
-  built: {{ site.data.kit.enabled | default: site.kit_enabled | jsonify }},
+  built: {{ site.data.kit.built | default: site.kit_enabled | jsonify }},
   // The kit: features: setting as written in _config.yml (preset modifiers or an explicit list)
   config_features: {{ site.kit.features | jsonify }},
   kit_configured: {
     {%- assign first = true -%}
     {%- for pair in site.kit -%}
-      {%- if pair[0] == "name" or pair[0] == "features" -%}{%- continue -%}{%- endif -%}
+      {%- if pair[0] == "name" or pair[0] == "features" or pair[0] == "build" -%}{%- continue -%}{%- endif -%}
       {%- assign v = pair[1] -%}
       {%- if v == nil or v == "" or v == empty -%}{%- assign set = false -%}{%- else -%}{%- assign set = true -%}{%- endif -%}
       {%- unless first -%},{%- endunless -%}{{ pair[0] | jsonify }}: {{ set }}
@@ -27,6 +29,7 @@ window.OCS_ADMIN_SITE = {
 </script>
 <p id="admin-mock" class="ocs__admin-banner" role="note" hidden></p>
 <p id="admin-status" class="ocs__admin-status" role="status" aria-live="polite" hidden></p>
+<div id="admin-mismatch" class="ocs__admin-status ocs__admin-status--warn" role="status" hidden></div>
 
 <div id="admin-gate-loading" class="ocs__card ocs__admin-gate">
   <p>Checking your account&hellip;</p>

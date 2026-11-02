@@ -23,7 +23,8 @@
                     {%- for path in site.minima.nav_pages -%}
                     {%- assign my_page = site.pages | where: "path", path | first -%}
                     {%- if my_page.title -%}
-                    <a class="page-link" href="{{ my_page.url | relative_url }}">
+                    {%- include kit/url-feature.html url=my_page.url -%}
+                    <a class="page-link" href="{{ my_page.url | relative_url }}"{% if kit_feature != "" %} data-feature="{{ kit_feature }}"{% endif %}>
                         {%- if my_page.course -%}
                             {{ my_page.course | upcase | escape }}
                         {%- else -%}

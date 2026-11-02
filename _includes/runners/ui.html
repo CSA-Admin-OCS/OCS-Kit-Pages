@@ -1,12 +1,10 @@
 {%- comment -%} Kit: when code-runner is off this runner degrades to a read-only code block. {%- endcomment -%}
 {%- if site.data.kit.disabled contains 'code-runner' -%}
-<div class="runner-disabled" data-feature="code-runner">
-{%- if include.challenge %}<p>{{ include.challenge }}</p>{% endif %}
-<pre><code>{{ include.code | escape }}</code></pre>
-</div>
+{%- include runners/fragments/readonly.html feature="code-runner" challenge=include.challenge code=include.code %}
 {%- else -%}
+{%- include runners/fragments/readonly.html feature="code-runner" challenge=include.challenge code=include.code hidden=true %}
 <!-- Reusable UI Runner Component -->
-<div class="ui-runner-container" id="ui-runner-{{ include.runner_id }}" data-storage-key="{{ page.permalink | replace: '/', '_' }}_{{ include.runner_id }}">
+<div data-feature="code-runner" class="ui-runner-container" id="ui-runner-{{ include.runner_id }}" data-storage-key="{{ page.permalink | replace: '/', '_' }}_{{ include.runner_id }}">
   {% include runners/fragments/challenge-box.html challenge=include.challenge %}
 
   {% capture ui_runner_top_controls %}

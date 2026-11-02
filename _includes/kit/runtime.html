@@ -1,6 +1,15 @@
 {%- comment -%}
-  Kit runtime switch: hides links/menu items of features that are off (build time
-  via _data/kit.json, run time via the backends' /api/kit) and applies the kit's
-  role labels. Must come before scripts that call window.OCS_KIT (both deferred).
+  Kit runtime switch: shows or hides links, menu items and whole pages from the backends' live
+  /api/kit state (assets/js/kit-features.js) and applies the kit's role labels. Loaded blocking
+  in <head> on purpose: it hides what is off before first paint. Layouts that do not use
+  head-custom.html include this directly, so it also sets the backend URIs when they are missing.
 {%- endcomment -%}
-<script src="{{ site.baseurl }}/assets/js/kit-features.js" defer></script>
+<script>
+    window.baseurl = window.baseurl || "{{ site.baseurl }}";
+    if (!window.javaURI) {
+        var kitLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        window.javaURI = kitLocal ? "{{ site.kit.backend.spring_local | default: 'http://localhost:8585' }}" : "{{ site.kit.backend.spring }}";
+        window.pythonURI = kitLocal ? "{{ site.kit.backend.flask_local | default: 'http://localhost:8587' }}" : "{{ site.kit.backend.flask }}";
+    }
+</script>
+<script src="{{ site.baseurl }}/assets/js/kit-features.js"></script>

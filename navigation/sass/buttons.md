@@ -17,7 +17,7 @@ Hi! My name is [Your Full Name]
 
 > SASS Mixins examples and code, explore these topics by clicking standard OCS SASS buttons.
 
-<div class="ocs__links">
+<div class="ocs__links" data-kit-group="heading">
     {% include kit/link.html url="/navigation/sass/buttons/" text="Buttons Lesson" class="ocs__btn" %}
     <a class="ocs__btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/_sass/open-coding/mixins/_buttons.scss">
         Button Mixins
@@ -31,7 +31,7 @@ Hi! My name is [Your Full Name]
 
 > Coding starts with tools, explore these tools clicking SASS buttons with SVG.
 
-<div class="ocs__links ocs__links--wide">
+<div class="ocs__links ocs__links--wide" data-kit-group="heading">
     <a class="ocs__btn ocs__btn--icon alert-green" href="{{ site.baseurl }}/">
         <span class="ocs__btn-icon" aria-hidden="true">
             <img src="{{ '/favicon.ico' | relative_url }}" alt="">
@@ -62,7 +62,7 @@ Hi! My name is [Your Full Name]
 
 > Foundations in Tech are essential, click my iridescent buttons to see some of my lesson creations.
 
-<div class="ocs__links">
+<div class="ocs__links" data-kit-group="heading">
     {% include kit/link.html url="/code/javascript" text="JS Basics" class="ocs__btn iridescent" %}
     {% include kit/link.html url="/game/essentials/variables" text="JS Variables" class="ocs__btn alert-green iridescent" %}
     {% include kit/link.html url="/gamerunner" text="Gamerunner" class="ocs__btn alert-yellow iridescent" %}
@@ -75,7 +75,7 @@ Hi! My name is [Your Full Name]
 
 > Here is my game progress through coding, click multicolor and size buttons to see these in the browser
 
-<div class="ocs__links">
+<div class="ocs__links" data-kit-group="heading">
     {% include kit/link.html url="/snake" text="Snake" class="ocs__btn pill alert-green fill" %}
     {% include kit/link.html url="/gamify/parallax" text="Fish" class="ocs__btn small alert-yellow fill" %}
     {% include kit/link.html url="/gamify" text="Gamify" class="ocs__btn alert-red fill" %}

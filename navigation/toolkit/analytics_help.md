@@ -3,6 +3,8 @@ title: Analytics Help
 permalink: /dashboard/help/analytics
 ---
 
+{% include kit/runtime.html %}
+
 # Analytics Help
 
 ## Overview

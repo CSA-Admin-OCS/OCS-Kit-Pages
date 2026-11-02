@@ -9,9 +9,8 @@ if (!Array.isArray(SITE.config_features)) SITE.config_features = [];
 /** True when every feature's pages ship (kit.build: all), so nothing here ever needs a rebuild. */
 export const ALL_BUILT = SITE.build === 'all';
 
-/** Tell the site-wide kit runtime (assets/js/kit-features.js) to drop its cached /api/kit answer. */
+/** Tell the site-wide kit runtime (assets/js/kit-features.js) to ask the backends again now. */
 export function refreshKitRuntime() {
-    try { sessionStorage.removeItem('ocs-kit-runtime'); } catch (_) { /* storage off */ }
     if (window.OCS_KIT && typeof window.OCS_KIT.refresh === 'function') window.OCS_KIT.refresh(true);
 }
 

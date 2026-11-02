@@ -39,8 +39,9 @@ let browser;
  * real-backend answers (no ?mock): null = unreachable, else a list of features or a function
  * returning one. Without backends, requests to them just fail.
  */
-async function open(url, { width = 1280, hold = 1500, backends, delay = 0, origin = ORIGIN } = {}) {
+async function open(url, { width = 1280, hold = 1500, backends, delay = 0, origin = ORIGIN, stored } = {}) {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    if (stored) await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), stored);
     const seen = [];
     await ctx.route('**/*', async route => {
         const req = route.request();
@@ -185,7 +186,7 @@ test('outage after an off answer: stays off, in this page and the next', async (
     up = false;
     await page.evaluate(() => OCS_KIT.refresh(true));
     assert.deepStrictEqual(await page.evaluate(() => [OCS_KIT.state.source, OCS_KIT.isEnabled('analytics'), OCS_KIT.canRun('analytics')]), ['last', false, false]);
-    const cached = await page.evaluate(() => JSON.parse(sessionStorage.getItem('ocs-kit-runtime')).answers);
+    const cached = await page.evaluate(() => JSON.parse(sessionStorage.getItem(Object.keys(sessionStorage).find(k => k.startsWith('ocs-kit-runtime|')))).answers);
     assert(cached.spring && cached.flask, 'a failed refresh overwrote the cache');
     const next = await ctx.newPage();   // new tab: only localStorage remains
     const before = seen.length;
@@ -234,6 +235,52 @@ test('profile: camera blocked and controls hidden when face recognition is off',
     });
     assert.strictEqual(calls, 1);
     await on.ctx.close();
+});
+
+const LOCAL_SCOPE = '|http://localhost:8585|http://localhost:8587';
+const LAST_KEY = `ocs-kit-last-answers|${LOCAL_SCOPE}`;
+function remembered(features, { age = 1000, scope = LOCAL_SCOPE } = {}) {
+    const at = Date.now() - age;
+    return JSON.stringify({ scope, at: { spring: at, flask: at }, answers: { spring: { kit: 'education', features }, flask: { kit: 'education', features } } });
+}
+const DAY = 24 * 60 * 60 * 1000;
+const sideState = page => page.evaluate(() => ({ source: OCS_KIT.state.source, analytics: OCS_KIT.canRun('analytics'), face: OCS_KIT.canRun('face-recognition'), lessonsOn: OCS_KIT.isEnabled('lessons') }));
+
+test('remembered on but deselected in the build: no side effect; selected and recent still runs', async () => {
+    const { ctx, page } = await open('/', { backends: DOWN, stored: [LAST_KEY, remembered(without().concat('face-recognition'))] });
+    const s = await sideState(page);
+    assert.deepStrictEqual([s.source, s.face, s.analytics], ['last', false, true]);
+    await ctx.close();
+});
+
+test('expired remembered answer: on no longer runs side effects, off stays off', async () => {
+    const { ctx, page, has } = await open('/', { backends: DOWN, stored: [LAST_KEY, remembered(without('lessons'), { age: 8 * DAY })] });
+    const s = await sideState(page);
+    assert.deepStrictEqual([s.source, s.analytics, s.lessonsOn], ['last', false, false]);
+    assert(!has(TRACKER), 'tracker loaded on an expired answer');
+    await ctx.close();
+});
+
+test('entry from another backend or site is ignored', async () => {
+    for (const stored of [
+        [LAST_KEY, remembered(without('lessons'), { scope: '|https://other.example|http://localhost:8587' })],
+        [LAST_KEY, remembered(without('lessons'), { scope: `/other-fork${LOCAL_SCOPE}` })],
+        [`ocs-kit-last-answers|/other-fork${LOCAL_SCOPE}`, remembered(without('lessons'), { scope: `/other-fork${LOCAL_SCOPE}` })],
+    ]) {
+        const { ctx, page } = await open('/', { backends: DOWN, stored });
+        const s = await sideState(page);
+        assert.deepStrictEqual([s.source, s.lessonsOn], ['build', true], stored[1]);
+        await ctx.close();
+    }
+});
+
+test('malformed stored answers are ignored', async () => {
+    for (const bad of ['{not json', '[]', JSON.stringify({ scope: LOCAL_SCOPE, at: {}, answers: { spring: { features: 'lessons' } } }), JSON.stringify({ scope: LOCAL_SCOPE, at: {}, answers: { spring: { features: [1] } } })]) {
+        const { ctx, page } = await open('/', { backends: DOWN, stored: [LAST_KEY, bad] });
+        const s = await sideState(page);
+        assert.deepStrictEqual([s.source, s.lessonsOn, s.analytics], ['build', true, true], bad);
+        await ctx.close();
+    }
 });
 
 // ------------------------------------------------------------------ mock parameters

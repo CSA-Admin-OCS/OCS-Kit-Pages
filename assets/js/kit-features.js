@@ -19,7 +19,9 @@
 //
 // Side effects fail CLOSED (trackers, third-party widgets, camera, outside APIs): hiding is not
 // enough, so they do not start until this page load has its answer and canRun(id) is true. With no
-// answer ever seen, canRun follows the build's selection: a deselected feature does nothing. If a
+// answer ever seen, canRun follows the build's selection: a deselected feature does nothing. A
+// remembered answer can only take away: it counts as on only if it is under 7 days old and the
+// build's selection has the feature too, while a remembered off stays off at any age. If a
 // feature goes off while a page is open, its widgets are removed and its requests stopped (the
 // state is re-checked every minute while any side effect is active).
 //
@@ -51,6 +53,7 @@
   var MOCK_PUBLIC_KEY = 'ocs-kit-mock-public';
   var TTL_MS = 60 * 1000;            // fresh: no need to ask the backends again
   var STALE_MS = 60 * 60 * 1000;     // old enough to ignore even for the first paint
+  var REMEMBER_MS = 7 * 24 * 60 * 60 * 1000;  // past this a remembered "on" no longer lets side effects run
   var LAST_KEY = 'ocs-kit-last-answers';   // localStorage: each backend's last answer, outlives outages
   var TIMEOUT_MS = 4000;
   var PENDING_MS = 1500;             // longest a feature page stays blank waiting for the answer
@@ -318,10 +321,11 @@
     };
   }
 
-  function useAnswers(answers, source) {
-    var e = answers && effective(answers);
+  function useAnswers(merged, source) {
+    var e = effective(merged.answers);
     if (!e) {
       state.known = false;
+      state.stale = false;
       state.source = 'build';
       state.enabled = BUILD.enabled.slice();
       state.roles = BUILD.roles || {};
@@ -334,6 +338,8 @@
     }
     state.known = true;
     state.source = source;
+    state.stale = !!merged.stale;
+    state.staleSince = merged.staleSince;
     state.enabled = e.enabled;
     state.roles = Object.assign({}, BUILD.roles || {}, e.roles);
     state.kit = e.kit;
@@ -345,38 +351,70 @@
 
   // ---------------------------------------------------------------- answers: cache, backends, mock
 
+  // Forks on *.github.io share one origin: keys and entries belong to this site and its backends.
+  var SCOPE = [BASEURL, window.javaURI || '', window.pythonURI || ''].join('|');
+
   function cacheKey() {
-    if (!MOCK) return CACHE_KEY;
-    return CACHE_KEY + '-mock' + (MOCK_DOWN || MOCK_OFF.length ? '-' + MOCK_DOWN + '-' + MOCK_OFF.join() : '');
+    if (!MOCK) return CACHE_KEY + '|' + SCOPE;
+    return CACHE_KEY + '-mock|' + SCOPE + (MOCK_DOWN || MOCK_OFF.length ? '|' + MOCK_DOWN + '|' + MOCK_OFF.join() : '');
   }
 
-  function readCache() {
+  function okAnswer(a) {
+    return !a || (typeof a === 'object' && Array.isArray(a.features) &&
+      a.features.every(function (f) { return typeof f === 'string'; }));
+  }
+
+  /** A stored entry, or null if it is malformed or from another site or backend. */
+  function readEntry(storage, key) {
     try {
-      var c = JSON.parse(sessionStorage.getItem(cacheKey()) || 'null');
-      if (!c || !c.answers) return null;
-      var age = Date.now() - c.at;
-      return age < STALE_MS ? { answers: c.answers, fresh: age < TTL_MS } : null;
-    } catch (e) { return null; }  // storage blocked
+      var c = JSON.parse(storage.getItem(key) || 'null');
+      if (!c || c.scope !== SCOPE || !c.answers || typeof c.answers !== 'object') return null;
+      return okAnswer(c.answers.spring) && okAnswer(c.answers.flask) ? c : null;
+    } catch (e) { return null; }  // storage blocked or bad JSON
+  }
+
+  function writeEntry(storage, key, entry) {
+    entry.scope = SCOPE;
+    try { storage.setItem(key, JSON.stringify(entry)); } catch (e) { /* storage blocked */ }
+  }
+
+  // The session cache holds only what backends really said; stale parts are merged in on reading.
+  function readCache() {
+    var c = readEntry(sessionStorage, cacheKey());
+    if (!c || typeof c.at !== 'number') return null;
+    var age = Date.now() - c.at;
+    return age < STALE_MS ? { answers: c.answers, fresh: age < TTL_MS } : null;
   }
 
   function writeCache(answers) {
-    try { sessionStorage.setItem(cacheKey(), JSON.stringify({ at: Date.now(), answers: answers })); } catch (e) { /* ignore */ }
+    writeEntry(sessionStorage, cacheKey(), { at: Date.now(), answers: answers });
   }
 
   function readLast() {
-    if (MOCK) return {};
-    try { return JSON.parse(localStorage.getItem(LAST_KEY) || '{}') || {}; } catch (e) { return {}; }
+    var c = MOCK ? null : readEntry(localStorage, LAST_KEY + '|' + SCOPE);
+    return c && c.at && typeof c.at === 'object' ? c : { answers: {}, at: {} };
   }
 
-  function writeLast(answers) {
-    if (MOCK) return;
-    try { localStorage.setItem(LAST_KEY, JSON.stringify(answers)); } catch (e) { /* storage blocked */ }
-  }
-
-  /** The live answers, with the last known answer standing in for a backend that gave none. */
+  /**
+   * The live answers, with the last known answer standing in for a backend that gave none.
+   * staleSince: when the oldest stand-in was heard, 0 if every answer is live.
+   */
   function withLast(live) {
-    var last = readLast();
-    return { spring: live.spring || last.spring || null, flask: live.flask || last.flask || null };
+    var last = readLast(), out = { answers: {}, at: {}, staleSince: 0 };
+    ['spring', 'flask'].forEach(function (b) {
+      var heard = live[b] ? Date.now() : Number(last.at[b]) || 0;
+      out.answers[b] = live[b] || last.answers[b] || null;
+      out.at[b] = heard;
+      if (!live[b] && out.answers[b]) {
+        out.stale = true;
+        out.staleSince = out.staleSince ? Math.min(out.staleSince, heard) : heard;
+      }
+    });
+    return out;
+  }
+
+  function remember(merged) {
+    if (!MOCK) writeEntry(localStorage, LAST_KEY + '|' + SCOPE, { at: merged.at, answers: merged.answers });
   }
 
   function fetchJson(url) {
@@ -445,7 +483,7 @@
     var seq = ++refreshSeq;
     var cached = force ? null : readCache();
     if (cached && cached.fresh) {
-      useAnswers(cached.answers, 'cache');
+      useAnswers(withLast(cached.answers), 'cache');
       state.settled = true;
       announce();
       return Promise.resolve(state);
@@ -455,8 +493,8 @@
       var answered = !!(answers.spring || answers.flask);
       var merged = withLast(answers);
       if (answered) {                         // a failed refresh never replaces what we know
-        writeCache(merged);
-        writeLast(merged);
+        writeCache(answers);
+        remember(merged);
       }
       useAnswers(merged, answered ? 'backend' : 'last');   // none ever seen: the build's selection
       state.settled = true;
@@ -471,8 +509,10 @@
   function canRun(id) {
     if (!id || id === 'core') return true;
     if (MOCK || !state.settled) return false;   // a mock answer is never a yes
-    if (state.known) return isEnabled(id);
-    return (BUILD.deselected || []).indexOf(id) === -1 && built.indexOf(id) !== -1;
+    var selected = (BUILD.deselected || []).indexOf(id) === -1 && built.indexOf(id) !== -1;
+    if (!state.known) return selected;
+    if (!isEnabled(id)) return false;
+    return !state.stale || (selected && Date.now() - state.staleSince < REMEMBER_MS);
   }
 
   /** Run fn once, as soon as canRun(id) is true. */
@@ -661,11 +701,11 @@
   installGuards();                 // before any page script can send anything
   var first = readCache();
   if (!first) {
-    var remembered = readLast();
-    if (remembered.spring || remembered.flask) first = { answers: remembered, fresh: false };
+    var remembered = readLast().answers;
+    if (remembered.spring || remembered.flask) first = { answers: {}, fresh: false };
   }
   if (first) {
-    useAnswers(first.answers, first.fresh ? 'cache' : 'stale');
+    useAnswers(withLast(first.answers), first.fresh ? 'cache' : 'stale');
     if (first.fresh) state.settled = true;
   }
   writeOffStyle();

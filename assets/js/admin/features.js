@@ -197,7 +197,7 @@ function kitPreview(preset) {
     const custom = changeable.filter(f => BACKEND_IDS.some(b => f.backends[b].known && f.backends[b].source === 'admin'));
     const roles = ROLE_ORDER.filter(r => roleText(state.kit && state.kit.roles, r) !== roleText(preset.roles, r))
         .map(r => ({ from: roleText(state.kit && state.kit.roles, r), to: roleText(preset.roles, r) }));
-    return { turnOn, turnOff, custom, roles, notBuilt: turnOn.filter(f => !f.inBuild) };
+    return { turnOn, turnOff, custom, roles, notBuilt: changeable.filter(f => wanted.has(f.id) && !f.inBuild) };
 }
 
 function listHtml(items, empty) {

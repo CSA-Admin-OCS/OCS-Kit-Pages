@@ -128,7 +128,7 @@ kit:
 Every page asks both `{javaURI}/api/kit` and `{pythonURI}/api/kit` and caches the answer for 60 seconds (`assets/js/kit-features.js`). Changes in the Feature Manager apply at once for that Admin.
 
 - If both answer, a feature is on only if both say on, and the admin pages show the disagreement. If one answers, the other's last known answer still counts.
-- **During an outage** the last known answers stay in force (kept in the browser), so what an Admin turned off stays off.
+- **During an outage** the last known answers stay in force (kept in the browser, per site and backend), so what an Admin turned off stays off. They can only take away: a side effect runs on a remembered "on" only if the answer is under 7 days old and `kit.name` / `kit.features` also has the feature.
 - **If no answer was ever seen**, menus follow `kit.name` / `kit.features` and no page is replaced.
 - **Side effects fail closed.** Trackers, comment and social widgets, the camera and outside APIs start only after the check passes, and stop if the feature goes off. Put such markup in `<template data-kit-load="my-feature">`, or check `OCS_KIT.canRun('my-feature')` in scripts. Requests that belong to a feature are listed in `RULES` in `kit-features.js`.
 

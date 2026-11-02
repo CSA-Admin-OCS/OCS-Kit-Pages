@@ -125,7 +125,7 @@ active_tab: profile
     </div>
 
 
-    <div class="bg-neutral-800 rounded-lg shadow-md p-6 mb-6 border-neutral-700 border">
+    <div data-feature="face-recognition" class="bg-neutral-800 rounded-lg shadow-md p-6 mb-6 border-neutral-700 border">
         <h2 class="text-xl font-semibold mb-6">Facial Registration</h2>
         <div id="facialRegistrationContainer" class="space-y-4">
             <p class="text-gray-400 text-sm">Register your face to use the Bathroom Pass system. Your data will be
@@ -1527,7 +1527,12 @@ active_tab: profile
     // --- Facial Registration Logic ---
     let scannerStream = null;
 
+    // The camera only opens when the kit runtime confirms the feature is on (fails closed).
+    const faceAllowed = () => !!(window.OCS_KIT && window.OCS_KIT.canRun('face-recognition'));
+    document.addEventListener('ocs:kit', () => { if (scannerStream && !faceAllowed()) closeScanner(); });
+
     async function openScanner() {
+        if (!faceAllowed()) return;
         const overlay = document.getElementById('webcamOverlay');
         const video = document.getElementById('webcamControl');
         const status = document.getElementById('scannerStatus');
@@ -1558,6 +1563,7 @@ active_tab: profile
     }
 
     async function captureAndSaveFace() {
+        if (!faceAllowed()) return;
         if (!window.currentUid) {
             alert("No user ID found. Please refresh the page.");
             return;

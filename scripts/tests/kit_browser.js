@@ -176,6 +176,66 @@ test('turned off during the page: widgets go and sending stops', async () => {
     await ctx.close();
 });
 
+// ------------------------------------------------------------------ outages and last known state
+
+test('outage after an off answer: stays off, in this page and the next', async () => {
+    let up = true;
+    const answer = () => (up ? without('analytics', 'lessons') : null);
+    const { ctx, page, seen } = await open('/', { backends: { spring: answer, flask: answer } });
+    up = false;
+    await page.evaluate(() => OCS_KIT.refresh(true));
+    assert.deepStrictEqual(await page.evaluate(() => [OCS_KIT.state.source, OCS_KIT.isEnabled('analytics'), OCS_KIT.canRun('analytics')]), ['last', false, false]);
+    const cached = await page.evaluate(() => JSON.parse(sessionStorage.getItem('ocs-kit-runtime')).answers);
+    assert(cached.spring && cached.flask, 'a failed refresh overwrote the cache');
+    const next = await ctx.newPage();   // new tab: only localStorage remains
+    const before = seen.length;
+    await next.goto(`${ORIGIN}/lessons/`, { waitUntil: 'domcontentloaded' });
+    await next.waitForFunction(() => window.OCS_KIT && OCS_KIT.state.settled);
+    await next.waitForTimeout(800);
+    assert.strictEqual(await next.evaluate(() => OCS_KIT.state.source), 'last');
+    assert(!seen.slice(before).some(u => TRACKER.test(u)), 'tracker loaded during the outage');
+    await next.locator('#ocs-kit-gate h1').waitFor();
+    await ctx.close();
+});
+
+test('partial answer: the last known answer of the missing backend still counts', async () => {
+    let springUp = true;
+    const { ctx, page } = await open('/', { backends: { spring: () => (springUp ? without('analytics') : null), flask: () => without() } });
+    springUp = false;
+    await page.evaluate(() => OCS_KIT.refresh(true));
+    assert.deepStrictEqual(await page.evaluate(() => [OCS_KIT.state.source, OCS_KIT.canRun('analytics'), OCS_KIT.canRun('social')]), ['backend', false, true]);
+    await ctx.close();
+});
+
+test('profile: camera blocked and controls hidden when face recognition is off', async () => {
+    const off = await open('/profile', { backends: both(without('face-recognition')) });
+    assert(!(await off.page.locator('#facialRegistrationContainer').isVisible()), 'controls still visible');
+    await off.page.waitForFunction(() => window.openScanner);
+    const r = await off.page.evaluate(async () => {
+        let calls = 0;
+        navigator.mediaDevices.getUserMedia = async () => { calls += 1; throw new Error('stub'); };
+        await window.openScanner();
+        await window.captureAndSaveFace();
+        const api = await fetch(`${window.javaURI}/api/face/register`, { method: 'POST' }).then(() => 'sent', e => e.message);
+        return { calls, api, overlayHidden: document.getElementById('webcamOverlay').classList.contains('hidden') };
+    });
+    assert.strictEqual(r.calls, 0, 'camera was requested');
+    assert(r.overlayHidden);
+    assert(/Blocked by OCS-in-a-Kit/.test(r.api), r.api);
+    await off.ctx.close();
+    const on = await open('/profile', { backends: both(without().concat('face-recognition')) });
+    assert(await on.page.locator('#facialRegistrationContainer').isVisible());
+    await on.page.waitForFunction(() => window.openScanner);
+    const calls = await on.page.evaluate(async () => {
+        let n = 0;
+        navigator.mediaDevices.getUserMedia = async () => { n += 1; throw new Error('stub'); };
+        await window.openScanner();
+        return n;
+    });
+    assert.strictEqual(calls, 1);
+    await on.ctx.close();
+});
+
 // ------------------------------------------------------------------ mock parameters
 
 test('mock answers never let a side effect run', async () => {

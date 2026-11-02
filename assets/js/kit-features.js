@@ -12,12 +12,14 @@
 // people see, not a security boundary: pages are public static files and the backends enforce
 // access themselves.
 //
-// Visible content fails OPEN: if no backend answers, menus follow the build's kit.name /
+// An outage must not undo an Admin's choice: each backend's last answer is kept in localStorage
+// and stands in for that backend while it does not answer, so what is off stays off. Only when no
+// answer has ever been seen does visible content fail OPEN: menus follow the build's kit.name /
 // kit.features selection and no page is replaced by the "turned off" message.
 //
 // Side effects fail CLOSED (trackers, third-party widgets, camera, outside APIs): hiding is not
 // enough, so they do not start until this page load has its answer and canRun(id) is true. With no
-// backend answer, canRun follows the build's selection: a deselected feature does nothing. If a
+// answer ever seen, canRun follows the build's selection: a deselected feature does nothing. If a
 // feature goes off while a page is open, its widgets are removed and its requests stopped (the
 // state is re-checked every minute while any side effect is active).
 //
@@ -49,7 +51,7 @@
   var MOCK_PUBLIC_KEY = 'ocs-kit-mock-public';
   var TTL_MS = 60 * 1000;            // fresh: no need to ask the backends again
   var STALE_MS = 60 * 60 * 1000;     // old enough to ignore even for the first paint
-  var DOWN_TTL_MS = 30 * 1000;       // remember "no backend answered" so pages do not keep waiting
+  var LAST_KEY = 'ocs-kit-last-answers';   // localStorage: each backend's last answer, outlives outages
   var TIMEOUT_MS = 4000;
   var PENDING_MS = 1500;             // longest a feature page stays blank waiting for the answer
 
@@ -64,8 +66,8 @@
   var urls = BUILD.urls || {};
   var built = BUILD.built || BUILD.enabled;
   var state = {
-    source: 'build',             // build (selection) | stale | cache | backend
-    known: false,                // true when enabled comes from a backend answer
+    source: 'build',             // build (selection) | last (outage: last answers) | stale | cache | backend
+    known: false,                // true when enabled comes from a backend answer, however old
     settled: false,              // false until this page load has its answer
     enabled: BUILD.enabled.slice(),
     roles: BUILD.roles || {},
@@ -353,14 +355,28 @@
       var c = JSON.parse(sessionStorage.getItem(cacheKey()) || 'null');
       if (!c || !c.answers) return null;
       var age = Date.now() - c.at;
-      var down = !c.answers.spring && !c.answers.flask;
-      if (down) return age < DOWN_TTL_MS ? { answers: c.answers, fresh: true } : null;
       return age < STALE_MS ? { answers: c.answers, fresh: age < TTL_MS } : null;
     } catch (e) { return null; }  // storage blocked
   }
 
   function writeCache(answers) {
     try { sessionStorage.setItem(cacheKey(), JSON.stringify({ at: Date.now(), answers: answers })); } catch (e) { /* ignore */ }
+  }
+
+  function readLast() {
+    if (MOCK) return {};
+    try { return JSON.parse(localStorage.getItem(LAST_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function writeLast(answers) {
+    if (MOCK) return;
+    try { localStorage.setItem(LAST_KEY, JSON.stringify(answers)); } catch (e) { /* storage blocked */ }
+  }
+
+  /** The live answers, with the last known answer standing in for a backend that gave none. */
+  function withLast(live) {
+    var last = readLast();
+    return { spring: live.spring || last.spring || null, flask: live.flask || last.flask || null };
   }
 
   function fetchJson(url) {
@@ -436,8 +452,13 @@
     }
     return askBackends().then(function (answers) {
       if (seq !== refreshSeq) return state;   // a newer refresh is on its way
-      writeCache(answers);
-      useAnswers(answers, 'backend');         // no answer: the build's selection (fail open)
+      var answered = !!(answers.spring || answers.flask);
+      var merged = withLast(answers);
+      if (answered) {                         // a failed refresh never replaces what we know
+        writeCache(merged);
+        writeLast(merged);
+      }
+      useAnswers(merged, answered ? 'backend' : 'last');   // none ever seen: the build's selection
       state.settled = true;
       announce();
       return state;
@@ -530,7 +551,8 @@
     { any: ['ai-chatbot', 'ai-grading'], re: /\/api\/gemini/ },
     { any: ['game-engine'], re: /alphavantage\.co/ },
     { any: ['lessons'], re: /api\.voicerss\.org/ },
-    { any: ['assignments'], re: /\/api\/challenge-submission/ }
+    { any: ['assignments'], re: /\/api\/challenge-submission/ },
+    { any: ['face-recognition'], re: /\/api\/face(\/|\?|$)|\/facial(\/|\?|$)/ }
   ];
   var IDENTITY = /\/api\/(person\/get|id|kit)(\/|\?|$)|\/authenticate(\?|$)/;
 
@@ -638,6 +660,10 @@
   pageFeature = featureForUrl(location.href);
   installGuards();                 // before any page script can send anything
   var first = readCache();
+  if (!first) {
+    var remembered = readLast();
+    if (remembered.spring || remembered.flask) first = { answers: remembered, fresh: false };
+  }
   if (first) {
     useAnswers(first.answers, first.fresh ? 'cache' : 'stale');
     if (first.fresh) state.settled = true;

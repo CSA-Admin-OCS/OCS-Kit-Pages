@@ -37,6 +37,7 @@ Usage (run from the repo root; `make` does this for you):
 Options: --kit NAME and --features "a,b,-c" override _config.yml and, being a request for that
 exact site (test builds, `make KIT=vanilla`), imply --build kit unless --build all is given.
 --build all|kit overrides kit.build; --root DIR runs against another checkout.
+--no-mock-fixtures leaves the admin pages' sample data out of the site (CI production builds).
 
 Generated files (gitignored, rewritten only when their content changes):
     _config.kit.yml         exclude: (merged with _config.yml's list) + kit_enabled + kit_build
@@ -393,6 +394,7 @@ def write_if_changed(rel, content):
 
 
 ADMIN_CATALOG_JS = "assets/js/admin/catalog-fallback.js"
+MOCK_FIXTURES = "assets/js/admin/mock/"
 
 
 def admin_catalog_js(catalog):
@@ -415,6 +417,8 @@ def apply(args):
     disabled = [fid for fid in catalog["features"] if fid not in built]
     base_exclude = list(load_config().get("exclude") or [])
     exclude = base_exclude + [p for p in disabled_patterns(catalog, built) if p not in base_exclude]
+    if args.no_mock_fixtures and MOCK_FIXTURES not in exclude:
+        exclude.append(MOCK_FIXTURES)
     files = list(repo_files())
     urls = feature_urls(catalog, files)
     kit = catalog["kits"][kit_name]
@@ -637,6 +641,7 @@ def main():
     ap.add_argument("--kit", help="override kit.name")
     ap.add_argument("--features", help="override kit.features, comma separated (e.g. '+finance-sim,-hallpass')")
     ap.add_argument("--build", choices=BUILD_MODES, help="override kit.build (--kit/--features imply kit)")
+    ap.add_argument("--no-mock-fixtures", action="store_true", help="exclude the admin pages' sample data from the build")
     ap.add_argument("--list", action="store_true", help="show kits, features and what is enabled")
     ap.add_argument("--check", action="store_true", help="validate kits/catalog.json (non-zero exit on errors)")
     ap.add_argument("--canonical", help="canonical catalog for --check (default ../OCS-Kit/kits/catalog.json or $OCS_KIT_CATALOG)")

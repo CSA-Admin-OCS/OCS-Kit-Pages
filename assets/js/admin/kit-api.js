@@ -14,7 +14,8 @@
 // GET /api/kit and /api/kit/admin also carry kit_source (admin | env | default) and customized (bool);
 // /api/kit/admin adds presets: {id: {name, description, features: [ids], roles: {admin|staff|member: {label}}}}.
 //
-// Mock mode (no backends needed): add ?mock=1 to the page URL (admin), or ?mock=staff,
+// Mock mode (no backends needed; ignored unless the site runs on localhost or 127.0.0.1, and
+// production builds leave the sample data out): add ?mock=1 to the page URL (admin), or ?mock=staff,
 // ?mock=member, ?mock=anon. &mockfail=flask|spring makes writes fail on that backend,
 // &mockfail=403 makes every write return 403, &mockfailonce=1 fails only the first write (to try a
 // retry), &mockdown=1|flask|spring makes reads and writes fail. Mock state lives in sessionStorage only.
@@ -29,7 +30,9 @@ export const BACKENDS = {
 };
 export const BACKEND_IDS = ['flask', 'spring'];
 
-const params = new URLSearchParams(location.search);
+// Anyone can craft a URL: mock parameters only count on a developer's own machine.
+const LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const params = new URLSearchParams(LOCAL ? location.search : '');
 const mockParam = params.get('mock');
 export const MOCK = mockParam ? (mockParam === '1' || mockParam === 'true' ? 'admin' : mockParam) : null;
 const MOCK_FAIL = params.get('mockfail');

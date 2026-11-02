@@ -36,7 +36,8 @@
 // API: window.OCS_KIT.isEnabled(id), .isUrlEnabled(href), .featureForUrl(href), .setUser(user),
 //      .canRun(id), .whenFeature(id, fn), .refresh(force), .apply(root), .effective(answers);
 //      fires "ocs:kit" on document.
-// Mock mode (admin page tests): ?mock=1 reads the sample state kit-api.js keeps in sessionStorage;
+// Mock mode (local testing only, ignored unless the site runs on localhost or 127.0.0.1, and it
+// never lets a side effect run): ?mock=1 reads the sample state kit-api.js keeps in sessionStorage;
 // &mockdown=1|flask|spring makes backends unreachable; &mockdelay=<ms> slows the answer down;
 // &mockoff=a,b turns those features off in the answers.
 (function () {
@@ -52,7 +53,9 @@
   var TIMEOUT_MS = 4000;
   var PENDING_MS = 1500;             // longest a feature page stays blank waiting for the answer
 
-  var params = new URLSearchParams(location.search);
+  // Anyone can craft a URL: mock parameters only count on a developer's own machine.
+  var LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var params = new URLSearchParams(LOCAL ? location.search : '');
   var MOCK = params.get('mock');
   var MOCK_DOWN = params.get('mockdown');
   var MOCK_DELAY = Number(params.get('mockdelay')) || 0;
@@ -446,7 +449,7 @@
   /** May this feature's side effects run now? Never before this page load has its answer. */
   function canRun(id) {
     if (!id || id === 'core') return true;
-    if (!state.settled) return false;
+    if (MOCK || !state.settled) return false;   // a mock answer is never a yes
     if (state.known) return isEnabled(id);
     return (BUILD.deselected || []).indexOf(id) === -1 && built.indexOf(id) !== -1;
   }

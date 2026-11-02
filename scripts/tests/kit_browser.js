@@ -2,6 +2,7 @@
 // Browser checks of the kit runtime and Feature Manager in mock mode (no backends needed).
 //   SITE=_site PLAYWRIGHT_CORE=<path to playwright-core> CHROME=<chrome binary> [PORT=4600] node scripts/tests/kit_browser.js
 // SITE must be a kit.build: all build. Requests are captured; nothing leaves the machine.
+// Side effects are tested against intercepted real-backend answers, everything else in ?mock mode.
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
@@ -33,32 +34,62 @@ const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
 let browser;
 
-/** A fresh context whose outside requests are recorded and answered empty. */
-async function open(url, { width = 1280, hold = 1500 } = {}) {
+/**
+ * A fresh context whose requests are recorded; outside ones are answered empty. backends picks the
+ * real-backend answers (no ?mock): null = unreachable, else a list of features or a function
+ * returning one. Without backends, requests to them just fail.
+ */
+async function open(url, { width = 1280, hold = 1500, backends, delay = 0, origin = ORIGIN } = {}) {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
     const seen = [];
-    await ctx.route('**/*', route => {
-        const u = route.request().url();
+    await ctx.route('**/*', async route => {
+        const req = route.request();
+        const u = req.url();
         seen.push(u);
-        if (u.startsWith(ORIGIN)) return route.continue();
-        if (/\/api\//.test(u) || /:858[57]\//.test(u)) return route.abort();
+        if (u.startsWith(origin)) return route.continue();
+        const kit = /\/api\/kit$/.test(new URL(u).pathname) && backendOf(u);
+        if (kit && backends) {
+            const headers = {
+                'access-control-allow-origin': origin, 'access-control-allow-credentials': 'true',
+                'access-control-allow-headers': 'content-type, x-origin', 'access-control-allow-methods': 'GET, OPTIONS',
+            };
+            if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+            let answer = backends[kit];
+            if (typeof answer === 'function') answer = answer();
+            if (!answer) return route.abort();
+            if (delay) await new Promise(r => setTimeout(r, delay));
+            return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify({ ...FIXTURE[kit], feature_details: undefined, features: answer }) });
+        }
+        if (/\/api\//.test(u) || backendOf(u)) return route.abort();
         return route.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
     });
     const page = await ctx.newPage();
-    await page.goto(ORIGIN + url, { waitUntil: 'domcontentloaded' });
+    await page.goto(origin + url, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.OCS_KIT && window.OCS_KIT.state.settled);
     await page.waitForTimeout(hold);
     return { ctx, page, seen, has: re => seen.some(u => re.test(u)) };
 }
 
+function backendOf(u) {
+    if (/:8585\/|spring\.example\.com/.test(u)) return 'spring';
+    if (/:8587\/|flask\.example\.com/.test(u)) return 'flask';
+    return '';
+}
+
+const FIXTURE = JSON.parse(fs.readFileSync(path.join(__dirname, '../../assets/js/admin/mock/kit-admin.json'), 'utf8'));
+const without = (...off) => FIXTURE.spring.features.filter(f => !off.includes(f));
+const both = list => ({ spring: list, flask: list });
+const DOWN = { spring: null, flask: null };
+
 // ------------------------------------------------------------------ side effects fail closed
+// Real-backend answers, not ?mock: a mock answer may never let a side effect run.
 
 const TRACKER = /ocs-analytics-tracker\.js/;
 const ANALYTICS_API = /\/api\/ocs-analytics/;
 const WIDGETS = /utteranc\.es|disqus\.com|\/api\/microblog|\/api\/feedback/;
 
 test('analytics off: tracker not loaded and no analytics requests', async () => {
-    const { ctx, page, has } = await open('/?mock=1&mockoff=analytics');
+    const { ctx, page, has } = await open('/', { backends: both(without('analytics')) });
     assert(!has(TRACKER), 'tracker was requested');
     assert(!has(ANALYTICS_API), 'analytics API was called');
     assert.strictEqual(await page.evaluate(() => typeof window.OCSAnalytics), 'undefined');
@@ -66,38 +97,50 @@ test('analytics off: tracker not loaded and no analytics requests', async () => 
 });
 
 test('analytics on: tracker loads', async () => {
-    const { ctx, page, has } = await open('/?mock=1');
+    const { ctx, page, has } = await open('/', { backends: both(without()) });
     assert(has(TRACKER), 'tracker was not requested');
     await page.waitForFunction(() => window.OCSAnalytics);
+    await ctx.close();
+});
+
+test('one backend says off: side effects stay off', async () => {
+    const { ctx, has } = await open('/', { backends: { spring: without(), flask: without('analytics') } });
+    assert(!has(TRACKER), 'tracker was requested');
     await ctx.close();
 });
 
 test('tracker waits for the answer: nothing before the backends reply', async () => {
     const slow = await browser.newContext();
     const seen = [];
-    await slow.route('**/*', r => { seen.push(r.request().url()); return r.continue().catch(() => {}); });
+    await slow.route('**/*', r => {
+        const u = r.request().url();
+        seen.push(u);
+        if (u.startsWith(ORIGIN)) return r.continue();
+        if (/\/api\/kit$/.test(u)) return new Promise(() => {});  // the backends never answer
+        return r.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
+    });
     const p = await slow.newPage();
-    await p.goto(`${ORIGIN}/?mock=1&mockdelay=1200`, { waitUntil: 'domcontentloaded' });
-    await p.waitForTimeout(400);
+    await p.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(800);
     assert(!seen.some(u => TRACKER.test(u)), 'tracker loaded before the answer');
     await slow.close();
 });
 
 test('social off: no third-party widget requests and no widget in the page', async () => {
-    const { ctx, page, has } = await open(`${COMMENTS_PAGE}?mock=1&mockoff=social`);
+    const { ctx, page, has } = await open(COMMENTS_PAGE, { backends: both(without('social')) });
     assert(!has(WIDGETS), 'a social widget made a request');
     assert.strictEqual(await page.locator('#microblog-panel, .micro-actions-wrapper, .utterances').count(), 0);
     await ctx.close();
 });
 
 test('social on: comment widget loads', async () => {
-    const { ctx, has } = await open(`${COMMENTS_PAGE}?mock=1`);
+    const { ctx, has } = await open(COMMENTS_PAGE, { backends: both(without()) });
     assert(has(/utteranc\.es/), 'utterances was not requested');
     await ctx.close();
 });
 
 test('no backend answers: selected feature runs, deselected feature does nothing', async () => {
-    const { ctx, page, has } = await open('/?mock=1&mockdown=1');
+    const { ctx, page, has } = await open('/', { backends: DOWN });
     assert(has(TRACKER), 'analytics is in the education selection, so it should load');
     const r = await page.evaluate(() => ({
         selected: OCS_KIT.canRun('analytics'), deselected: OCS_KIT.canRun('face-recognition'), known: OCS_KIT.state.known,
@@ -107,7 +150,7 @@ test('no backend answers: selected feature runs, deselected feature does nothing
 });
 
 test('feature page with no backend: visible but camera and its requests stay blocked if deselected', async () => {
-    const { ctx, page, has } = await open('/facial-login?mock=1&mockdown=1');
+    const { ctx, page, has } = await open('/facial-login', { backends: DOWN });
     assert.strictEqual(await page.locator('#ocs-kit-gate').count(), 0, 'visible content must fail open');
     const camera = await page.evaluate(() => navigator.mediaDevices
         ? navigator.mediaDevices.getUserMedia({ video: true }).then(() => 'granted', e => e.name) : 'NotAllowedError');
@@ -119,19 +162,47 @@ test('feature page with no backend: visible but camera and its requests stay blo
 });
 
 test('turned off during the page: widgets go and sending stops', async () => {
-    const { ctx, page, seen } = await open(`${COMMENTS_PAGE}?mock=1`);
+    let list = without();
+    const answer = () => list;
+    const { ctx, page, seen } = await open(COMMENTS_PAGE, { backends: { spring: answer, flask: answer } });
     assert(await page.evaluate(() => document.querySelectorAll('[data-kit-load="social"][data-kit-loaded]').length > 0));
-    await page.evaluate(async () => {
-        const fx = await (await fetch(`${window.baseurl}/assets/js/admin/mock/kit-admin.json`)).json();
-        for (const b of ['flask', 'spring']) fx[b].features = fx[b].features.filter(f => f !== 'analytics' && f !== 'social');
-        sessionStorage.setItem('ocs-kit-mock-public', JSON.stringify({ flask: fx.flask, spring: fx.spring }));
-        await OCS_KIT.refresh(true);
-    });
+    list = without('analytics', 'social');
+    await page.evaluate(() => OCS_KIT.refresh(true));
     const before = seen.length;
     const r = await page.evaluate(() => fetch(`${window.javaURI}/api/ocs-analytics/save`, { method: 'POST' }).then(() => 'sent', e => e.message));
     assert(/Blocked by OCS-in-a-Kit/.test(r), r);
     assert.strictEqual(await page.evaluate(() => document.querySelectorAll('[data-kit-load="social"][data-kit-loaded]').length), 0);
     assert(!seen.slice(before).some(u => ANALYTICS_API.test(u)));
+    await ctx.close();
+});
+
+// ------------------------------------------------------------------ mock parameters
+
+test('mock answers never let a side effect run', async () => {
+    const { ctx, page, has } = await open(`${COMMENTS_PAGE}?mock=1`);
+    assert(!has(TRACKER), 'tracker loaded on a mock answer');
+    assert(!has(WIDGETS), 'widget loaded on a mock answer');
+    assert.strictEqual(await page.evaluate(() => OCS_KIT.canRun('analytics')), false);
+    await ctx.close();
+});
+
+test('off localhost, mock parameters are ignored and the real backends are asked', async () => {
+    const origin = `http://kit.test:${PORT}`;
+    const { ctx, page, has } = await open('/lessons/?mock=1&mockoff=lessons&mockdown=1', { origin, backends: both(without()) });
+    assert(has(/spring\.example\.com\/api\/kit/), 'Spring was not asked');
+    assert(has(/flask\.example\.com\/api\/kit/), 'Flask was not asked');
+    assert(!has(/mock\/kit-admin\.json/), 'mock data was fetched');
+    assert.strictEqual(await page.locator('#ocs-kit-gate').count(), 0, 'mockoff took effect');
+    assert.deepStrictEqual(await page.evaluate(() => [OCS_KIT.state.source, OCS_KIT.isEnabled('lessons')]), ['backend', true]);
+    await ctx.close();
+});
+
+test('off localhost, a crafted mockoff cannot hide a live feature and the admin pages ignore ?mock', async () => {
+    const origin = `http://kit.test:${PORT}`;
+    const { ctx, page, has } = await open('/admin/?mock=1', { origin, backends: both(without()), hold: 800 });
+    assert(!has(/mock\/kit-admin\.json/), 'mock data was fetched');
+    assert(await page.locator('#admin-mock').isHidden(), 'mock banner shown');
+    assert(has(/spring\.example\.com\/api\/person\/get/), 'real identity not asked');
     await ctx.close();
 });
 
@@ -317,7 +388,7 @@ test('Admin Dashboard shows the kit, customized and where it came from', async (
 
 (async () => {
     await new Promise(r => server.listen(PORT, r));
-    browser = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-fake-ui-for-media-stream'] });
+    browser = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-fake-ui-for-media-stream', '--host-resolver-rules=MAP kit.test 127.0.0.1'] });
     let failed = 0, ran = 0;
     const only = process.env.ONLY ? new RegExp(process.env.ONLY) : null;
     for (const [name, fn] of tests) {

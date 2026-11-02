@@ -1,6 +1,6 @@
 // Admin Dashboard (/admin/): kit, roles + user counts, feature summary, admin links.
 import { BACKENDS, BACKEND_IDS, MOCK, loadCatalog, getIdentity, getKitPublic, getKitAdmin, getUserCounts, describeFailure } from './kit-api.js';
-import { SITE, esc, announce, mockBanner, showGate, buildFeatures, backendName, renderStaff } from './common.js';
+import { SITE, esc, announce, mockBanner, showGate, buildFeatures, backendName, kitSourceText, kitStatus, renderMismatch, renderStaff } from './common.js';
 
 const base = SITE.baseurl || '';
 const withMock = (url) => (MOCK ? `${url}${url.includes('?') ? '&' : '?'}mock=${encodeURIComponent(MOCK)}` : url);
@@ -14,12 +14,18 @@ function renderKit(kit, catalog, admin) {
     document.getElementById('kit-name').textContent = kit.kit_name || kitInfo.name || kit.kit;
     document.getElementById('admin-kit-badge').textContent = kit.kit_name || kitInfo.name || 'Admin';
     document.getElementById('kit-desc').textContent = kitInfo.description || '';
+    const status = kitStatus(admin);
+    document.getElementById('kit-flags').innerHTML = status.customized
+        ? '<span class="ocs__admin-pill ocs__admin-pill--warn">Customized</span>'
+        : status.live.length ? '<span class="ocs__admin-pill ocs__admin-pill--muted">Not customized</span>' : '';
+    if (!status.agree) document.getElementById('kit-name').textContent = 'Backends disagree';
     document.getElementById('kit-backends').innerHTML = BACKEND_IDS.map(b => {
         const r = admin[b];
-        const text = r && r.ok ? `${esc(r.data.kit_name || r.data.kit)}` : 'not reachable';
+        const text = r && r.ok ? `${esc(r.data.kit_name || r.data.kit)}${r.data.customized ? ', customized' : ''}` : 'not reachable';
         const cls = r && r.ok ? 'ocs__admin-pill--ok' : 'ocs__admin-pill--warn';
         const glyph = r && r.ok ? '&#10003;' : '!';
-        return `<dt>${esc(backendName(b))} backend</dt><dd><span class="ocs__admin-pill ${cls}"><span aria-hidden="true">${glyph}</span> ${text}</span></dd>`;
+        const where = r && r.ok ? `<br><small>${esc(kitSourceText(r.data.kit_source))}</small>` : '';
+        return `<dt>${esc(backendName(b))} backend</dt><dd><span class="ocs__admin-pill ${cls}"><span aria-hidden="true">${glyph}</span> ${text}</span>${where}</dd>`;
     }).join('');
 }
 
@@ -38,7 +44,7 @@ function renderRoles(kit, counts) {
 }
 
 function renderFeatures(features) {
-    const on = features.filter(f => f.enabled === true || f.enabled === 'mixed');
+    const on = features.filter(f => f.enabled === true);   // a feature on in one backend only is off for visitors
     const needs = on.filter(f => f.needsSetup);
     const mixed = features.filter(f => f.enabled === 'mixed');
     document.getElementById('feat-on').textContent = `${on.length} of ${features.length} on`;
@@ -46,7 +52,7 @@ function renderFeatures(features) {
     pills.push(needs.length
         ? `<span class="ocs__admin-pill ocs__admin-pill--warn"><span aria-hidden="true">!</span> ${needs.length} need setup</span>`
         : `<span class="ocs__admin-pill ocs__admin-pill--ok"><span aria-hidden="true">&#10003;</span> All set up</span>`);
-    if (mixed.length) pills.push(`<span class="ocs__admin-pill ocs__admin-pill--warn">${mixed.length} differ between backends</span>`);
+    if (mixed.length) pills.push(`<span class="ocs__admin-pill ocs__admin-pill--warn">${mixed.length} differ between backends (off for visitors)</span>`);
     const notBuilt = on.filter(f => !f.inBuild);
     if (notBuilt.length) pills.push(`<span class="ocs__admin-pill ocs__admin-pill--warn">${notBuilt.length} need a website rebuild</span>`);
     document.getElementById('feat-pills').innerHTML = pills.join('');
@@ -61,9 +67,9 @@ function renderFeatures(features) {
 }
 
 function renderLinks(features) {
-    const isOn = id => features.some(f => f.id === id && (f.enabled === true || f.enabled === 'mixed'));
+    const isOn = id => features.some(f => f.id === id && f.enabled === true);
     const links = [
-        { href: withMock(`${base}/admin/features/`), title: 'Feature Manager', text: 'Turn features on or off and follow each setup guide.' },
+        { href: withMock(`${base}/admin/features/`), title: 'Feature Manager', text: 'Start from a kit, turn features on or off and follow each setup guide.' },
         { href: `${BACKENDS.spring.uri}/mvc/person/read`, title: 'Users and roles', text: 'Create accounts, reset passwords and change roles (Spring admin).' },
         { href: `${BACKENDS.spring.uri}/mvc/groups/read`, title: 'Groups', text: 'Create groups and add people to them (Spring admin).' },
         { href: `${BACKENDS.flask.uri}/users/table2`, title: 'Flask users', text: 'User table on the Flask backend.' },
@@ -112,6 +118,7 @@ async function main() {
     renderRoles(kit, counts);
     renderFeatures(features);
     renderLinks(features);
+    renderMismatch(admin, catalog);
     const problems = BACKEND_IDS.filter(b => !admin[b].ok).map(b => describeFailure(admin[b]));
     if (problems.length) announce(problems.join(' '), 'warn');
 }

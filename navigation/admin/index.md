@@ -28,6 +28,7 @@ search_exclude: true
       <section class="ocs__card" aria-labelledby="kit-title">
         <h2 class="ocs__section-title" id="kit-title">Kit</h2>
         <div class="ocs__admin-big" id="kit-name">&nbsp;</div>
+        <div class="ocs__admin-row" id="kit-flags"></div>
         <p id="kit-desc" class="ocs__admin-crumbs"></p>
         <dl class="ocs__admin-kv" id="kit-backends"></dl>
       </section>

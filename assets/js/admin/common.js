@@ -2,9 +2,12 @@
 import { BACKENDS, BACKEND_IDS, MOCK } from './kit-api.js';
 
 /** Build-time facts about this website, written by the page (never secret values). */
-export const SITE = window.OCS_ADMIN_SITE || { built: null, config_features: [], kit_configured: {}, baseurl: '' };
+export const SITE = window.OCS_ADMIN_SITE || { build: 'kit', built: null, config_features: [], kit_configured: {}, baseurl: '' };
 if (!Array.isArray(SITE.built)) SITE.built = null;
 if (!Array.isArray(SITE.config_features)) SITE.config_features = [];
+
+/** True when every feature's pages ship (kit.build: all), so nothing here ever needs a rebuild. */
+export const ALL_BUILT = SITE.build === 'all';
 
 /** Tell the site-wide kit runtime (assets/js/kit-features.js) to drop its cached /api/kit answer. */
 export function refreshKitRuntime() {
@@ -122,7 +125,7 @@ export function buildFeatures(catalog, admin) {
             missingRequired,
             unknownRequired,
             needsSetup: missingRequired.length > 0,
-            inBuild: !buildList || buildList.includes(id) || id === 'core' || !!(cat.always_on),
+            inBuild: ALL_BUILT || !buildList || buildList.includes(id) || id === 'core' || !!(cat.always_on),
         });
     }
     const order = ['core', 'general', 'education'];
@@ -132,6 +135,58 @@ export function buildFeatures(catalog, admin) {
 
 export function sourceText(source) {
     return { kit: 'kit default', env: 'server .env', admin: 'changed by an admin' }[source] || source || 'unknown';
+}
+
+export function kitSourceText(source) {
+    return {
+        admin: 'chosen by an Admin on this website',
+        env: 'from the server configuration (.env)',
+        default: 'the server default (nothing configured)',
+    }[source] || 'source not reported (update this backend)';
+}
+
+/** Kit presets: what the backends offer, else the catalog bundled with the website. */
+export function presetsOf(catalog, admin) {
+    for (const b of ['spring', 'flask']) {
+        const r = admin && admin[b];
+        if (r && r.ok && r.data.presets && Object.keys(r.data.presets).length) return r.data.presets;
+    }
+    return catalog.kits || {};
+}
+
+/** The kit state both backends agree on, or how they differ. */
+export function kitStatus(admin) {
+    const live = BACKEND_IDS.filter(b => admin[b] && admin[b].ok);
+    const kits = new Set(live.map(b => admin[b].data.kit));
+    return {
+        live,
+        agree: kits.size <= 1,
+        kit: kits.size === 1 ? [...kits][0] : null,
+        customized: live.some(b => admin[b].data.customized),
+        sources: live.map(b => admin[b].data.kit_source),
+        fromAdmin: live.some(b => admin[b].data.kit_source === 'admin'),
+    };
+}
+
+/** Show how the backends disagree: visitors only get a feature that is on in both. */
+export function renderMismatch(admin, catalog) {
+    const box = document.getElementById('admin-mismatch');
+    if (!box) return;
+    const live = BACKEND_IDS.filter(b => admin[b] && admin[b].ok);
+    const parts = [];
+    if (live.length === 2) {
+        const [a, b] = live.map(x => admin[x].data);
+        if (a.kit !== b.kit) parts.push(`Kit: ${backendName(live[0])} runs ${a.kit_name || a.kit}, ${backendName(live[1])} runs ${b.kit_name || b.kit}.`);
+        const name = id => ((catalog.features || {})[id] || {}).name || id;
+        const only = (x, y) => (x.features || []).filter(id => !(y.features || []).includes(id)).map(name);
+        const aOnly = only(a, b), bOnly = only(b, a);
+        if (aOnly.length) parts.push(`On in ${backendName(live[0])} only: ${aOnly.join(', ')}.`);
+        if (bOnly.length) parts.push(`On in ${backendName(live[1])} only: ${bOnly.join(', ')}.`);
+    }
+    box.hidden = !parts.length;
+    box.textContent = parts.length
+        ? `The backends disagree, so visitors only get features that are on in both. ${parts.join(' ')}`
+        : '';
 }
 
 export function backendName(b) {

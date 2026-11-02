@@ -189,13 +189,140 @@ test('runner degrades to read-only code when its feature is off', async () => {
     await off.ctx.close();
 });
 
+// ------------------------------------------------------------------ Feature Manager
+
+const FM = '/admin/features/?mock=1';
+const card = (page, name) => page.locator('.ocs__admin-kit', { has: page.locator('h3', { hasText: name }) });
+
+async function openFm(extra = '', opts = {}) {
+    const o = await open(FM + extra, { hold: 300, ...opts });
+    await o.page.locator('#kit-cards .ocs__admin-kit').first().waitFor();
+    return o;
+}
+
+async function choose(page, name) {
+    await card(page, name).locator('[data-kit-choose]').click();
+    await page.locator('#kit-dialog').waitFor();
+}
+
+test('kit cards show the presets, the current kit and role labels', async () => {
+    const { ctx, page } = await openFm();
+    assert.strictEqual(await page.locator('#kit-cards .ocs__admin-kit').count(), 3);
+    assert(/Current kit/.test(await card(page, 'OCS Education').innerText()));
+    assert(/Manager/.test(await card(page, 'OCS Business').innerText()));
+    assert(/Editor/.test(await card(page, 'OCS Vanilla').innerText()));
+    assert(!/Website rebuild needed/.test(await page.locator('#admin-features').innerText()), 'rebuild text in all mode');
+    await ctx.close();
+});
+
+test('confirm dialog previews the change; Escape cancels and returns focus', async () => {
+    const { ctx, page } = await openFm();
+    await card(page, 'OCS Business').locator('[data-kit-choose]').focus();
+    await page.keyboard.press('Enter');
+    const body = await page.locator('#kit-dialog-body').innerText();
+    assert(/Accounts and data are kept; turned-off features are hidden, not deleted/.test(body), body);
+    assert(/Per-feature customizations will be cleared/.test(body));
+    assert(/Teacher becomes Manager/.test(body) && /Student becomes Member/.test(body), body);
+    const off = body.slice(body.indexOf('Features that turn off'), body.indexOf('Role labels'));
+    assert(/Hall pass|Lessons/i.test(off), off);
+    assert.strictEqual(await page.evaluate(() => document.activeElement.id), 'kit-dialog-cancel');
+    for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
+    assert(await page.evaluate(() => document.getElementById('kit-dialog').contains(document.activeElement)), 'focus left the dialog');
+    await page.keyboard.press('Escape');
+    assert(await page.locator('#kit-dialog').isHidden());
+    assert.strictEqual(await page.evaluate(() => document.activeElement.dataset.kitChoose), 'business');
+    assert(/Current kit/.test(await card(page, 'OCS Education').innerText()), 'cancel must not change the kit');
+    await ctx.close();
+});
+
+test('applying a kit changes both backends, labels and site state; switches still work; reset returns', async () => {
+    const { ctx, page } = await openFm();
+    await choose(page, 'OCS Business');
+    await page.locator('#kit-dialog-ok').click();
+    await page.locator('#kit-result.ocs__admin-result--ok', { hasText: 'on both backends' }).waitFor();
+    assert(/Current kit/.test(await card(page, 'OCS Business').innerText()));
+    assert.strictEqual(await page.locator('#admin-kit-badge').textContent(), 'OCS Business');
+    await page.waitForFunction(() => OCS_KIT.state.kit === 'business' && !OCS_KIT.isEnabled('lessons'));
+    assert.strictEqual(await page.evaluate(() => OCS_KIT.state.roles.staff), 'Manager');
+    // the gate follows on the very next page, and it is a real page of the site
+    await page.goto(`${ORIGIN}/lessons/?mock=1`);
+    await page.locator('#ocs-kit-gate h1').waitFor();
+    await page.goto(ORIGIN + FM);
+    await page.locator('#kit-cards .ocs__admin-kit').first().waitFor();
+    // a single switch customizes
+    await page.locator('[data-toggle="hallpass"]').check({ force: true });
+    const confirm = page.locator('#confirm-ok');
+    if (await confirm.isVisible()) await confirm.click();
+    await page.locator('#fresult-hallpass', { hasText: 'on both backends' }).waitFor();
+    assert(/Customized/.test(await card(page, 'OCS Business').innerText()));
+    // reset to the server default
+    await page.locator('#kit-reset').click();
+    await page.locator('#kit-dialog-ok').click();
+    await page.locator('#kit-result', { hasText: 'Reset to the server default on both' }).waitFor();
+    assert(/Current kit/.test(await card(page, 'OCS Education').innerText()));
+    assert(!/Customized/.test(await card(page, 'OCS Education').innerText()));
+    await ctx.close();
+});
+
+test('partial failure is reported per backend, never as success, and retry fixes it', async () => {
+    const { ctx, page } = await openFm('&mockfail=spring&mockfailonce=1');
+    await choose(page, 'OCS Vanilla');
+    await page.locator('#kit-dialog-ok').click();
+    const box = page.locator('#kit-result.ocs__admin-result--warn');
+    await box.waitFor();
+    const text = await box.innerText();
+    assert(/Not finished/.test(text) && /Flask: done/.test(text) && /Spring: failed/.test(text), text);
+    assert(!/on both backends/.test(text));
+    assert(await page.locator('#admin-mismatch').isVisible(), 'mismatch not shown');
+    await page.waitForFunction(() => OCS_KIT.state.mismatch && OCS_KIT.state.mismatch.kit);
+    await page.locator('[data-kit-retry]', { hasText: 'Retry on Spring' }).click();
+    await page.locator('#kit-result.ocs__admin-result--ok', { hasText: 'on both backends' }).waitFor();
+    assert(await page.locator('#admin-mismatch').isHidden());
+    assert(/Current kit/.test(await card(page, 'OCS Vanilla').innerText()));
+    await ctx.close();
+});
+
+test('total failure says nothing changed; a 403 offers sign-in, not retry', async () => {
+    const a = await openFm('&mockdown=spring');
+    assert(/not reachable/.test(await a.page.locator('#kit-source').innerText()));
+    await a.ctx.close();
+    const { ctx, page } = await openFm('&mockfail=403');
+    await choose(page, 'OCS Vanilla');
+    await page.locator('#kit-dialog-ok').click();
+    const box = page.locator('#kit-result.ocs__admin-result--error');
+    await box.waitFor();
+    assert(/Nothing changed/.test(await box.innerText()));
+    assert.strictEqual(await page.locator('[data-kit-retry]').count(), 0);
+    assert(/Current kit/.test(await card(page, 'OCS Education').innerText()));
+    await ctx.close();
+});
+
+test('phone width: kit section has no horizontal scroll', async () => {
+    const { ctx, page } = await openFm('', { width: 360 });
+    await choose(page, 'OCS Business');
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert(over <= 0, `page is ${over}px wider than the screen`);
+    await ctx.close();
+});
+
+test('Admin Dashboard shows the kit, customized and where it came from', async () => {
+    const { ctx, page } = await open('/admin/?mock=1', { hold: 600 });
+    await page.locator('#kit-backends dd').first().waitFor();
+    assert.strictEqual(await page.locator('#kit-name').innerText(), 'OCS Education');
+    assert(/Not customized/.test(await page.locator('#kit-flags').innerText()));
+    assert(/server configuration/.test(await page.locator('#kit-backends').innerText()));
+    assert(!/rebuild/i.test(await page.locator('#feat-pills').innerText()));
+    await ctx.close();
+});
+
 (async () => {
     await new Promise(r => server.listen(PORT, r));
     browser = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-fake-ui-for-media-stream'] });
-    let failed = 0;
+    let failed = 0, ran = 0;
     const only = process.env.ONLY ? new RegExp(process.env.ONLY) : null;
     for (const [name, fn] of tests) {
         if (only && !only.test(name)) continue;
+        ran += 1;
         try {
             await fn();
             console.log(`ok   ${name}`);
@@ -206,6 +333,6 @@ test('runner degrades to read-only code when its feature is off', async () => {
     }
     await browser.close();
     server.close();
-    console.log(`${tests.length - failed} passed, ${failed} failed`);
+    console.log(`${ran - failed} passed, ${failed} failed`);
     process.exit(failed ? 1 : 0);
 })();

@@ -11,7 +11,7 @@ search_exclude: true
     <div>
       <nav class="ocs__admin-crumbs" aria-label="Breadcrumb"><a href="{{ site.baseurl }}/admin/" id="crumb-admin">Admin Dashboard</a> / Features</nav>
       <h1>Feature Manager</h1>
-      <p>Turn features on or off for everyone on this site. Many features need a key or a setting on the server before they fully work: each card shows whether it is ready, and <strong>Setup guide</strong> walks you through the rest.</p>
+      <p>Start from a kit, or turn single features on or off for everyone on this site. Many features need a key or a setting on the server before they fully work: each card shows whether it is ready, and <strong>Setup guide</strong> walks you through the rest.</p>
     </div>
     <span class="ocs__badge" id="admin-kit-badge">Admin</span>
   </header>
@@ -25,6 +25,15 @@ search_exclude: true
   </section>
 
   <div id="admin-gate-content" hidden>
+    <section class="ocs__card ocs__admin-kits" aria-labelledby="kits-title">
+      <h2 class="ocs__section-title" id="kits-title">Start from a kit</h2>
+      <p>Pick the setup closest to what you need, then adjust individual features below.<span id="feature-intro-build" hidden> It applies right away; the website does not need a rebuild.</span></p>
+      <ul class="ocs__admin-kit-list" id="kit-cards"></ul>
+      <div id="kit-result" class="ocs__admin-result" tabindex="-1" aria-live="polite" hidden></div>
+      <p class="ocs__admin-crumbs" id="kit-source"></p>
+      <button type="button" class="ocs__btn small" id="kit-reset">Reset to server default</button>
+    </section>
+
     <div class="ocs__admin-toolbar" role="search">
       <label class="ocs__admin-sr" for="feature-search">Search features</label>
       <input id="feature-search" class="ocs__input" type="search" placeholder="Search features" autocomplete="off">
@@ -47,6 +56,19 @@ search_exclude: true
         <button type="button" class="ocs__btn small" id="guide-close">Close<span class="ocs__admin-sr"> setup guide</span></button>
       </div>
       <div id="guide-body"></div>
+    </div>
+  </div>
+
+  <div class="ocs__modal ocs__admin-dialog ocs__admin-confirm" id="kit-dialog" role="alertdialog" aria-modal="true" aria-labelledby="kit-dialog-title" aria-describedby="kit-dialog-body" hidden>
+    <div class="ocs__modal-card">
+      <div class="ocs__modal-header">
+        <h2 class="ocs__modal-title" id="kit-dialog-title">Switch kit?</h2>
+      </div>
+      <div id="kit-dialog-body"></div>
+      <div class="ocs__modal-actions">
+        <button type="button" class="ocs__btn" id="kit-dialog-cancel">Cancel</button>
+        <button type="button" class="ocs__btn accent fill" id="kit-dialog-ok">Apply</button>
+      </div>
     </div>
   </div>
 

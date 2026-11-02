@@ -8,10 +8,16 @@
 //                                          setup (this backend's settings with configured: bool) and ready
 //   PUT    /api/kit/admin/features        {"features": {"<id>": true|false}} -> admin payload
 //   DELETE /api/kit/admin/features/<id>   clear the admin override (back to kit/.env default)
+//   PUT    /api/kit/admin/kit             {"kit": "vanilla|education|business"}: apply a preset and clear
+//                                          per-feature overrides -> admin payload
+//   DELETE /api/kit/admin/kit             back to the server's env configuration -> admin payload
+// GET /api/kit and /api/kit/admin also carry kit_source (admin | env | default) and customized (bool);
+// /api/kit/admin adds presets: {id: {name, description, features: [ids], roles: {admin|staff|member: {label}}}}.
 //
 // Mock mode (no backends needed): add ?mock=1 to the page URL (admin), or ?mock=staff,
 // ?mock=member, ?mock=anon. &mockfail=flask|spring makes writes fail on that backend,
-// &mockfail=403 makes every write return 403. Mock state lives in sessionStorage only.
+// &mockfail=403 makes every write return 403, &mockfailonce=1 fails only the first write (to try a
+// retry), &mockdown=1|flask|spring makes reads and writes fail. Mock state lives in sessionStorage only.
 
 import { pythonURI, javaURI, fetchOptions } from '{{ site.baseurl }}/assets/js/api/config.js';
 import FALLBACK_CATALOG from '{{ site.baseurl }}/assets/js/admin/catalog-fallback.js';
@@ -27,6 +33,7 @@ const params = new URLSearchParams(location.search);
 const mockParam = params.get('mock');
 export const MOCK = mockParam ? (mockParam === '1' || mockParam === 'true' ? 'admin' : mockParam) : null;
 const MOCK_FAIL = params.get('mockfail');
+const MOCK_DOWN = params.get('mockdown');
 
 // ------------------------------------------------------------------ catalog
 
@@ -65,7 +72,7 @@ export function describeFailure(result) {
         case 0: return `${name} backend did not answer (is it running? Check ${BACKENDS[result.backend].uri}).`;
         case 401: return `You are signed out of the ${name} backend. Sign in again.`;
         case 403: return `${name} says your account is not an Admin.`;
-        case 404: return `${name} backend has no feature API yet (update the ${name} backend).`;
+        case 404: return `${name} backend does not have this kit or feature API yet (update the ${name} backend).`;
         default: {
             const msg = result.data && (result.data.message || result.data.error);
             return `${name} answered ${result.status}${msg ? ': ' + msg : ''}.`;
@@ -122,6 +129,7 @@ export async function getKitPublic() {
         const p = st.spring;
         return {
             kit: p.kit, kit_name: p.kit_name, features: p.features, roles: p.roles, signup_role: p.signup_role,
+            kit_source: p.kit_source, customized: p.customized,
             feature_details: p.feature_details.map(({ id, name, category, labels, enabled }) => ({ id, name, category, labels, enabled })),
         };
     }
@@ -141,7 +149,14 @@ export async function getKitAdmin() {
 
 /** Turn a feature on/off on both backends. Returns { flask: result, spring: result }. */
 export async function setFeature(id, enabled) {
-    if (MOCK) return mockCall('PUT', id, enabled);
+    if (MOCK) {
+        return mockCall('PUT', (st, fx) => {
+            const f = fx.feature_details.find(d => d.id === id);
+            if (f && f.always_on && !enabled) return `'${id}' is always on`;
+            st.overrides[id] = !!enabled;
+            return null;
+        });
+    }
     const body = { features: { [id]: !!enabled } };
     const results = await Promise.all(BACKEND_IDS.map(b => call(b, 'PUT', '/api/kit/admin/features', body)));
     return Object.fromEntries(results.map(r => [r.backend, normalize(r)]));
@@ -149,8 +164,34 @@ export async function setFeature(id, enabled) {
 
 /** Clear the admin override on both backends (back to the kit / server .env default). */
 export async function resetFeature(id) {
-    if (MOCK) return mockCall('DELETE', id);
+    if (MOCK) return mockCall('DELETE', (st) => { delete st.overrides[id]; return null; });
     const results = await Promise.all(BACKEND_IDS.map(b => call(b, 'DELETE', `/api/kit/admin/features/${encodeURIComponent(id)}`)));
+    return Object.fromEntries(results.map(r => [r.backend, normalize(r)]));
+}
+
+/**
+ * Apply a kit preset on the given backends (a retry passes only the ones that failed).
+ * A 200 that does not report the requested kit counts as a failure: never claim what did not happen.
+ */
+export async function applyKit(kit, backends = BACKEND_IDS) {
+    const results = MOCK
+        ? await mockCall('PUT', (st) => { st.kit = kit; st.kit_source = 'admin'; st.overrides = {}; return null; }, backends)
+        : Object.fromEntries((await Promise.all(backends.map(b => call(b, 'PUT', '/api/kit/admin/kit', { kit })))).map(r => [r.backend, normalize(r)]));
+    for (const b of backends) {
+        const r = results[b];
+        if (r.ok && r.data.kit !== kit) {
+            results[b] = { ...r, ok: false, data: { message: `it still reports the ${r.data.kit_name || r.data.kit} kit` } };
+        }
+    }
+    return results;
+}
+
+/** Back to each server's env configuration on the given backends. */
+export async function resetKit(backends = BACKEND_IDS) {
+    if (MOCK) {
+        return mockCall('DELETE', (st, fx) => { st.kit = fx.kit; st.kit_source = 'env'; st.overrides = {}; return null; }, backends);
+    }
+    const results = await Promise.all(backends.map(b => call(b, 'DELETE', '/api/kit/admin/kit')));
     return Object.fromEntries(results.map(r => [r.backend, normalize(r)]));
 }
 
@@ -187,67 +228,108 @@ function mockFixture() {
     return fixturePromise;
 }
 
-const MOCK_KEY = 'ocs-admin-mock-overrides';
-function readOverrides() {
-    try { return JSON.parse(sessionStorage.getItem(MOCK_KEY) || '{}'); } catch (_) { return {}; }
+const MOCK_STATE_KEY = 'ocs-admin-mock-state';
+const MOCK_PUBLIC_KEY = 'ocs-kit-mock-public';   // read by assets/js/kit-features.js
+const MOCK_FAILED_KEY = 'ocs-admin-mock-failed';
+
+function readMock() {
+    try { return JSON.parse(sessionStorage.getItem(MOCK_STATE_KEY) || '{}'); } catch (_) { return {}; }
 }
-function writeOverrides(o) {
-    try { sessionStorage.setItem(MOCK_KEY, JSON.stringify(o)); } catch (_) { /* private mode */ }
+function writeMock(o) {
+    try { sessionStorage.setItem(MOCK_STATE_KEY, JSON.stringify(o)); } catch (_) { /* private mode */ }
 }
 
+/** The backends' `presets`: in mock mode, from the catalog so the samples cannot drift from it. */
+function mockPresets() {
+    const out = {};
+    for (const [id, k] of Object.entries(FALLBACK_CATALOG.kits)) {
+        const roles = {};
+        for (const [r, v] of Object.entries(k.roles || {})) roles[r] = { label: v.label };
+        out[id] = { name: k.name, description: k.description, features: k.features, roles };
+    }
+    return out;
+}
+
+/** Fixture + what mock Admins did: fixture = the server's env configuration. */
 async function mockState() {
     const fx = await mockFixture();
-    const over = readOverrides();
+    const saved = readMock();
+    const presets = mockPresets();
     const out = {};
+    const pub = {};
     for (const b of BACKEND_IDS) {
         const p = JSON.parse(JSON.stringify(fx[b]));
-        const mine = over[b] || {};
+        const st = saved[b] || { kit: p.kit, kit_source: 'env', overrides: {} };
+        if (st.kit_source === 'admin') {
+            const preset = presets[st.kit];
+            p.kit = st.kit;
+            p.kit_name = preset.name;
+            p.roles = preset.roles;
+            for (const d of p.feature_details) {
+                d.enabled = !!d.always_on || preset.features.includes(d.id);
+                d.source = 'kit';
+            }
+        }
         for (const d of p.feature_details) {
-            if (d.id in mine) {
-                d.enabled = mine[d.id];
+            if (d.id in st.overrides) {
+                d.enabled = st.overrides[d.id];
                 d.source = 'admin';
                 d.updated_by = 'admin';
                 d.updated_at = new Date().toISOString();
             }
         }
         p.features = p.feature_details.filter(d => d.enabled).map(d => d.id);
+        p.kit_source = st.kit_source;
+        p.customized = Object.keys(st.overrides).length > 0;
+        p.presets = presets;
         out[b] = p;
+        pub[b] = { kit: p.kit, kit_name: p.kit_name, features: p.features, roles: p.roles, kit_source: p.kit_source, customized: p.customized };
     }
+    try { sessionStorage.setItem(MOCK_PUBLIC_KEY, JSON.stringify(pub)); } catch (_) { /* private mode */ }
     return out;
 }
 
-async function mockCall(method, id, enabled) {
+function mockWriteFails(b) {
+    if (MOCK_DOWN === '1' || MOCK_DOWN === b) return true;
+    if (MOCK_FAIL !== b) return false;
+    if (!params.has('mockfailonce')) return true;
+    if (sessionStorage.getItem(MOCK_FAILED_KEY)) return false;
+    sessionStorage.setItem(MOCK_FAILED_KEY, '1');
+    return true;
+}
+
+async function mockCall(method, change, targets = BACKEND_IDS) {
     await new Promise(r => setTimeout(r, 250));
     const results = {};
-    const over = readOverrides();
-    for (const b of BACKEND_IDS) {
+    const saved = readMock();
+    const fx = await mockFixture();
+    for (const b of targets) {
         if (MOCK !== 'admin') {
             results[b] = { backend: b, ok: false, status: MOCK === 'anon' ? 401 : 403, data: { message: 'Admin only' } };
             continue;
         }
-        if (method !== 'GET' && (MOCK_FAIL === '403')) {
+        if (method === 'GET') {
+            results[b] = MOCK_DOWN === '1' || MOCK_DOWN === b
+                ? { backend: b, ok: false, status: 0, data: null, error: 'mock failure' }
+                : { backend: b, ok: true, status: 200 };
+            continue;
+        }
+        if (MOCK_FAIL === '403') {
             results[b] = { backend: b, ok: false, status: 403, data: { message: 'Admin only' } };
             continue;
         }
-        if (method !== 'GET' && MOCK_FAIL === b) {
+        if (mockWriteFails(b)) {
             results[b] = { backend: b, ok: false, status: 0, data: null, error: 'mock failure' };
             continue;
         }
-        over[b] = over[b] || {};
-        if (method === 'PUT') {
-            const fx = await mockFixture();
-            const f = fx[b].feature_details.find(d => d.id === id);
-            if (f && f.always_on && !enabled) {
-                results[b] = { backend: b, ok: false, status: 400, data: { message: `'${id}' is always on` } };
-                continue;
-            }
-            over[b][id] = !!enabled;
-        }
-        if (method === 'DELETE') delete over[b][id];
+        const st = saved[b] || { kit: fx[b].kit, kit_source: 'env', overrides: {} };
+        const refusal = change && change(st, fx[b]);
+        if (refusal) { results[b] = { backend: b, ok: false, status: 400, data: { message: refusal } }; continue; }
+        saved[b] = st;
         results[b] = { backend: b, ok: true, status: 200 };
     }
-    writeOverrides(over);
+    writeMock(saved);
     const state = await mockState();
-    for (const b of BACKEND_IDS) if (results[b].ok) results[b].data = state[b];
+    for (const b of targets) if (results[b].ok) results[b].data = state[b];
     return results;
 }

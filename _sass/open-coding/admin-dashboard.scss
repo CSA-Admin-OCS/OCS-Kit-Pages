@@ -315,6 +315,43 @@
   &:focus::after { display: block; }
 }
 
+// ---------------------------------------------------------------- start from a kit
+
+.ocs__admin-kits {
+  margin-bottom: 1.25rem;
+
+  > p { margin: 0.35rem 0 0.9rem; max-width: 65ch; }
+  .ocs__admin-result { margin: 0.9rem 0; }
+  .ocs__admin-result:focus { outline: none; }
+  .ocs__admin-result ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+}
+
+.ocs__admin-kit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+}
+
+.ocs__admin-kit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--adm-line);
+  border-radius: 0.5rem;
+
+  h3 { margin: 0; font-size: 1.05rem; }
+  p { margin: 0; flex: 1; overflow-wrap: anywhere; }
+  .ocs__admin-row:empty { display: none; }
+  .ocs__btn { align-self: flex-start; max-width: 100%; white-space: normal; }
+}
+
+.ocs__admin-kit--current { border-color: var(--pref-accent-color); border-width: 2px; }
+
 // ---------------------------------------------------------------- guide dialog
 
 .ocs__admin-dialog {

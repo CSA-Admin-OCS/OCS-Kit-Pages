@@ -1,8 +1,8 @@
 // Feature Manager (/admin/features/): toggle features on both backends, setup guides.
-import { BACKENDS, BACKEND_IDS, MOCK, loadCatalog, getIdentity, getKitPublic, getKitAdmin, setFeature, resetFeature, describeFailure } from './kit-api.js';
-import { SITE, WHERE, esc, md, announce, mockBanner, showGate, buildFeatures, sourceText, backendName, copyText, trapFocus, renderStaff, refreshKitRuntime } from './common.js';
+import { BACKENDS, BACKEND_IDS, MOCK, loadCatalog, getIdentity, getKitPublic, getKitAdmin, setFeature, resetFeature, applyKit, resetKit, describeFailure } from './kit-api.js';
+import { SITE, ALL_BUILT, WHERE, esc, md, announce, mockBanner, showGate, buildFeatures, sourceText, kitSourceText, presetsOf, kitStatus, renderMismatch, backendName, copyText, trapFocus, renderStaff, refreshKitRuntime } from './common.js';
 
-const state = { catalog: null, admin: null, kit: null, features: [], busy: new Set(), results: {}, guideId: null };
+const state = { catalog: null, admin: null, kit: null, features: [], busy: new Set(), results: {}, guideId: null, kitOp: null };
 const CONFIRM_LABELS = ['privacy-sensitive', 'needs-api-key', 'third-party-data', 'needs-external-service'];
 const ALERT_LABELS = new Set(['privacy-sensitive', 'needs-api-key', 'third-party-data', 'needs-external-service', 'runs-code', 'user-content']);
 
@@ -127,6 +127,202 @@ function rerenderCard(id, focusToggle) {
 
 function refreshModel() {
     state.features = buildFeatures(state.catalog, state.admin);
+    const r = state.admin.spring.ok ? state.admin.spring : state.admin.flask;
+    if (r.ok) state.kit = r.data;
+    if (state.kit) $('admin-kit-badge').textContent = state.kit.kit_name || state.kit.kit;
+    renderMismatch(state.admin, state.catalog);
+    renderKits();
+}
+
+// ------------------------------------------------------------------ start from a kit
+
+const ROLE_ORDER = ['admin', 'staff', 'member'];
+const roleText = (roles, r) => (roles && roles[r] && (roles[r].label || roles[r])) || r;
+
+function kitCard(id, preset, status) {
+    const current = status.kit === id;
+    const onOne = !status.agree && status.live.filter(b => state.admin[b].data.kit === id);
+    const clean = current && !status.customized;
+    const busy = state.kitOp && state.kitOp.busy;
+    const can = status.live.length > 0 && !busy && !clean;
+    const badges = [
+        current ? '<span class="ocs__admin-pill ocs__admin-pill--on"><span aria-hidden="true">&#10003;</span> Current kit</span>' : '',
+        onOne && onOne.length ? `<span class="ocs__admin-pill ocs__admin-pill--warn"><span aria-hidden="true">!</span> On ${esc(onOne.map(backendName).join(' and '))} only</span>` : '',
+        current && status.customized ? '<span class="ocs__admin-pill ocs__admin-pill--warn">Customized</span>' : '',
+    ].join('');
+    const label = clean ? 'In use' : current ? `Go back to plain ${esc(preset.name)}` : `Use ${esc(preset.name)}`;
+    return `<li class="ocs__admin-kit${current ? ' ocs__admin-kit--current' : ''}">
+      <h3>${esc(preset.name)}</h3>
+      <div class="ocs__admin-row">${badges}</div>
+      <p>${esc(preset.description)}</p>
+      <dl class="ocs__admin-kv">
+        <dt>Roles</dt><dd>${ROLE_ORDER.map(r => esc(roleText(preset.roles, r))).join(', ')}</dd>
+        <dt>Features</dt><dd>${presetIds(preset).length}</dd>
+      </dl>
+      <button type="button" class="ocs__btn small ${current ? '' : 'accent fill'}" data-kit-choose="${esc(id)}" ${can ? '' : 'disabled'}>${label}</button>
+    </li>`;
+}
+
+function renderKits() {
+    const box = $('kit-cards');
+    if (!box) return;
+    const status = kitStatus(state.admin);
+    const presets = presetsOf(state.catalog, state.admin);
+    box.innerHTML = Object.entries(presets).map(([id, p]) => kitCard(id, p, status)).join('');
+    const where = status.live.length
+        ? BACKEND_IDS.map(b => (state.admin[b].ok
+            ? `${backendName(b)}: ${state.admin[b].data.kit_name || state.admin[b].data.kit}, ${kitSourceText(state.admin[b].data.kit_source)}${state.admin[b].data.customized ? ', customized' : ''}`
+            : `${backendName(b)}: not reachable`)).join('. ') + '.'
+        : 'Neither backend answered, so kits cannot be changed right now.';
+    $('kit-source').textContent = where;
+    const reset = $('kit-reset');
+    const known = status.sources.every(s => s);
+    reset.disabled = !status.live.length || !!(state.kitOp && state.kitOp.busy) || (known && !status.fromAdmin);
+    renderKitResult();
+}
+
+function presetIds(preset) {
+    const all = Object.keys(state.catalog.features || {});
+    const list = preset.features || [];
+    const ids = list.includes('*') ? all : list;
+    return all.filter(id => ids.includes(id) || state.catalog.features[id].always_on);
+}
+
+/** What applying a preset would change, against the state visitors get now. */
+function kitPreview(preset) {
+    const wanted = new Set(presetIds(preset));
+    const changeable = state.features.filter(f => !f.always_on);
+    const turnOn = changeable.filter(f => wanted.has(f.id) && f.enabled !== true);
+    const turnOff = changeable.filter(f => !wanted.has(f.id) && f.enabled !== false && f.enabled !== null);
+    const custom = changeable.filter(f => BACKEND_IDS.some(b => f.backends[b].known && f.backends[b].source === 'admin'));
+    const roles = ROLE_ORDER.filter(r => roleText(state.kit && state.kit.roles, r) !== roleText(preset.roles, r))
+        .map(r => ({ from: roleText(state.kit && state.kit.roles, r), to: roleText(preset.roles, r) }));
+    return { turnOn, turnOff, custom, roles, notBuilt: turnOn.filter(f => !f.inBuild) };
+}
+
+function listHtml(items, empty) {
+    return items.length ? `<ul>${items.join('')}</ul>` : `<p>${esc(empty)}</p>`;
+}
+
+function kitPreviewHtml(preset) {
+    const p = kitPreview(preset);
+    const on = p.turnOn.map(f => `<li>${esc(f.name)}${f.needsSetup ? ' <span class="ocs__admin-pill ocs__admin-pill--warn">Needs setup</span>' : ''}</li>`);
+    const off = p.turnOff.map(f => `<li>${esc(f.name)}</li>`);
+    const roles = p.roles.map(r => `<li>${esc(r.from)} becomes ${esc(r.to)}</li>`);
+    return `<p><strong>Accounts and data are kept; turned-off features are hidden, not deleted.</strong></p>
+      <h3>Features that turn on</h3>${listHtml(on, 'None.')}
+      <h3>Features that turn off</h3>${listHtml(off, 'None.')}
+      <h3>Role labels</h3>${listHtml(roles, 'No change.')}
+      <h3>Your customizations</h3>
+      <p>${p.custom.length
+        ? `Per-feature customizations will be cleared: ${esc(p.custom.map(f => f.name).join(', '))}.`
+        : 'Per-feature customizations will be cleared. There are none right now.'}</p>
+      ${p.notBuilt.length ? `<div class="ocs__admin-result ocs__admin-result--warn">This website was built with <code>kit.build: kit</code>, so the pages of ${esc(p.notBuilt.map(f => f.name).join(', '))} are not in it. Website rebuild needed for them to appear.</div>` : ''}`;
+}
+
+function askKit(title, bodyHtml, okLabel) {
+    const dlg = $('kit-dialog');
+    $('kit-dialog-title').textContent = title;
+    $('kit-dialog-body').innerHTML = bodyHtml;
+    $('kit-dialog-ok').textContent = okLabel;
+    dlg.hidden = false;
+    document.body.style.overflow = 'hidden';
+    return new Promise(resolve => {
+        let release = null;
+        const done = (ok) => {
+            dlg.hidden = true;
+            document.body.style.overflow = '';
+            $('kit-dialog-ok').onclick = null;
+            $('kit-dialog-cancel').onclick = null;
+            dlg.onclick = null;
+            if (release) release();
+            resolve(ok);
+        };
+        release = trapFocus(dlg, () => done(false));
+        $('kit-dialog-ok').onclick = () => done(true);
+        $('kit-dialog-cancel').onclick = () => done(false);
+        dlg.onclick = (e) => { if (e.target === dlg) done(false); };
+        $('kit-dialog-cancel').focus();
+    });
+}
+
+function renderKitResult() {
+    const box = $('kit-result');
+    const op = state.kitOp;
+    if (!op) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    if (op.busy) {
+        box.className = 'ocs__admin-result ocs__admin-result--ok';
+        box.innerHTML = `${esc(op.doing)}&hellip;`;
+        return;
+    }
+    const failed = BACKEND_IDS.filter(b => !op.outcome[b].ok);
+    const done = BACKEND_IDS.filter(b => op.outcome[b].ok);
+    const denied = failed.length && failed.every(b => [401, 403].includes(op.outcome[b].status));
+    const lines = BACKEND_IDS.map(b => `<li>${esc(backendName(b))}: ${op.outcome[b].ok
+        ? '<strong>done</strong>'
+        : `<strong>failed</strong>. ${esc(describeFailure(op.outcome[b]))}`}</li>`).join('');
+    let head, kind;
+    if (!failed.length) { kind = 'ok'; head = `${esc(op.done)} on both backends.`; }
+    else if (!done.length) { kind = 'error'; head = `Nothing changed: ${esc(op.what)} failed on both backends.`; }
+    else {
+        kind = 'warn';
+        head = `Not finished: ${esc(op.what)} worked on ${esc(backendName(done[0]))} but failed on ${esc(backendName(failed[0]))}. The backends now disagree, so visitors only get features that are on in both.`;
+    }
+    const retry = failed.length && !denied
+        ? `<button type="button" class="ocs__btn small accent fill" data-kit-retry>Retry on ${esc(failed.map(backendName).join(' and '))}</button>` : '';
+    box.className = `ocs__admin-result ocs__admin-result--${kind}`;
+    box.innerHTML = `<p>${head}</p><ul>${lines}</ul>${denied ? '<p>Sign in again with an Admin account, then try once more.</p>' : ''}${retry}`;
+}
+
+async function runKitOp(op, targets) {
+    op.busy = true;
+    state.kitOp = op;
+    renderKits();
+    $('kit-result').focus();
+    const results = await op.run(targets);
+    op.busy = false;
+    op.outcome = { ...op.outcome, ...results };
+    for (const b of targets) if (results[b].ok) state.admin[b] = results[b];
+    if (targets.some(b => results[b].ok)) {
+        state.results = {};
+        refreshKitRuntime();
+    }
+    const failedNow = targets.filter(b => !results[b].ok);
+    if (failedNow.length) {   // show what those backends really report now, not what we hoped
+        const fresh = await getKitAdmin();
+        for (const b of failedNow) state.admin[b] = fresh[b];
+    }
+    refreshModel();
+    renderGroups();
+    if (state.guideId) renderGuide(state.guideId);
+    const failed = BACKEND_IDS.filter(b => !op.outcome[b].ok);
+    announce(failed.length
+        ? `${op.what} failed on ${failed.map(backendName).join(' and ')}.`
+        : `${op.done} on both backends.`, failed.length ? 'warn' : 'ok');
+    $('kit-result').focus();
+}
+
+async function chooseKit(id) {
+    const preset = presetsOf(state.catalog, state.admin)[id];
+    if (!preset || (state.kitOp && state.kitOp.busy)) return;
+    const ok = await askKit(`Switch to ${preset.name}?`, kitPreviewHtml(preset), `Apply ${preset.name}`);
+    if (!ok) return;
+    runKitOp({
+        doing: `Applying ${preset.name}`, what: `applying ${preset.name}`, done: `${preset.name} is now active`,
+        run: targets => applyKit(id, targets), outcome: {},
+    }, BACKEND_IDS);
+}
+
+async function resetToServer() {
+    if (state.kitOp && state.kitOp.busy) return;
+    const ok = await askKit('Reset to server default?', `<p><strong>Accounts and data are kept; turned-off features are hidden, not deleted.</strong></p>
+      <p>The kit chosen on this website is dropped and each backend goes back to the kit in its own server configuration (<code>.env</code>). Per-feature customizations will be cleared.</p>`, 'Reset to server default');
+    if (!ok) return;
+    runKitOp({
+        doing: 'Resetting to the server default', what: 'resetting to the server default', done: 'Reset to the server default',
+        run: targets => resetKit(targets), outcome: {},
+    }, BACKEND_IDS);
 }
 
 // ------------------------------------------------------------------ actions
@@ -438,7 +634,12 @@ function wire() {
     document.addEventListener('click', async (e) => {
         const t = e.target.closest('button');
         if (!t) return;
-        if (t.dataset.guide) openGuide(t.dataset.guide);
+        if (t.dataset.kitChoose) chooseKit(t.dataset.kitChoose);
+        else if (t.hasAttribute('data-kit-retry')) {
+            const op = state.kitOp;
+            if (op && !op.busy) runKitOp(op, BACKEND_IDS.filter(b => !op.outcome[b].ok));
+        } else if (t.id === 'kit-reset') resetToServer();
+        else if (t.dataset.guide) openGuide(t.dataset.guide);
         else if (t.dataset.reset) reset(t.dataset.reset);
         else if (t.dataset.copy != null) {
             const ok = await copyText(t.dataset.copy);
@@ -480,11 +681,11 @@ async function main() {
         return;
     }
     state.admin = await getKitAdmin();
+    if (ALL_BUILT) $('feature-intro-build').hidden = false;
     const denied = BACKEND_IDS.every(b => !state.admin[b].ok && (state.admin[b].status === 401 || state.admin[b].status === 403));
     if (denied) { showGate('denied', 'not an Admin on the backends'); return; }
     const okResult = BACKEND_IDS.map(b => state.admin[b]).find(r => r.ok);
     state.kit = okResult ? okResult.data : await getKitPublic();
-    if (state.kit) $('admin-kit-badge').textContent = state.kit.kit_name || state.kit.kit;
     refreshModel();
     showGate('content');
     wire();

@@ -46,6 +46,7 @@ Generated files (gitignored, rewritten only when their content changes):
                               built     features whose pages are in this build
                               disabled  features whose pages are NOT in this build (Liquid guards)
                               enabled   the kit.name/kit.features selection (no-backend fallback)
+                              deselected  the rest: their side effects never run without a backend's yes
                               urls      url -> feature map, plus role labels
 """
 import argparse
@@ -432,6 +433,7 @@ def apply(args):
         "build": mode,
         "built": built,
         "enabled": enabled,
+        "deselected": [fid for fid in catalog["features"] if fid not in enabled],
         "disabled": disabled,
         "urls": urls,
         "disabled_urls": sorted(u for u, f in urls.items() if f in disabled)

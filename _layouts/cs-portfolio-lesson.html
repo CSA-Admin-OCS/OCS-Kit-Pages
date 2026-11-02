@@ -238,7 +238,7 @@ layout: opencs
     {% include utterances.html %}
   {%- endif -%}
   {%- if site.disqus.shortname -%}
-    {% include disqus_comments.html %}
+    <template data-kit-load="social">{% include disqus_comments.html %}</template>
   {%- endif -%}
   <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
 </article>

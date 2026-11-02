@@ -15,7 +15,14 @@
 // Visible content fails OPEN: if no backend answers, menus follow the build's kit.name /
 // kit.features selection and no page is replaced by the "turned off" message.
 //
+// Side effects fail CLOSED (trackers, third-party widgets, camera, outside APIs): hiding is not
+// enough, so they do not start until this page load has its answer and canRun(id) is true. With no
+// backend answer, canRun follows the build's selection: a deselected feature does nothing. If a
+// feature goes off while a page is open, its widgets are removed and its requests stopped (the
+// state is re-checked every minute while any side effect is active).
+//
 // Markup hooks:
+//   <template data-kit-load="<id>">  markup and scripts that stay inert until canRun(<id>).
 //   data-feature="<id>"      hidden when feature <id> is off. Site links whose URL
 //                            belongs to a feature (kits/catalog.json) are marked
 //                            automatically, including ones added later by scripts.
@@ -27,9 +34,11 @@
 //   data-feature-admin       only shown to signed-in Admins (feature management).
 //
 // API: window.OCS_KIT.isEnabled(id), .isUrlEnabled(href), .featureForUrl(href), .setUser(user),
-//      .refresh(force), .apply(root), .effective(answers); fires "ocs:kit" on document.
+//      .canRun(id), .whenFeature(id, fn), .refresh(force), .apply(root), .effective(answers);
+//      fires "ocs:kit" on document.
 // Mock mode (admin page tests): ?mock=1 reads the sample state kit-api.js keeps in sessionStorage;
-// &mockdown=1|flask|spring makes backends unreachable; &mockdelay=<ms> slows the answer down.
+// &mockdown=1|flask|spring makes backends unreachable; &mockdelay=<ms> slows the answer down;
+// &mockoff=a,b turns those features off in the answers.
 (function () {
   'use strict';
 
@@ -47,6 +56,7 @@
   var MOCK = params.get('mock');
   var MOCK_DOWN = params.get('mockdown');
   var MOCK_DELAY = Number(params.get('mockdelay')) || 0;
+  var MOCK_OFF = (params.get('mockoff') || '').split(',').filter(Boolean);
 
   var urls = BUILD.urls || {};
   var built = BUILD.built || BUILD.enabled;
@@ -66,6 +76,7 @@
   };
   var pageFeature = '';
   var refreshSeq = 0;
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;   // the runtime's own calls skip the guard
 
   // Hidden-state styling lives here so it works on every layout, before first paint.
   var pageParts = 'body>:not(.site-header):not(.site-footer):not(#ocs-kit-gate):not(script):not(style)';
@@ -329,7 +340,10 @@
 
   // ---------------------------------------------------------------- answers: cache, backends, mock
 
-  function cacheKey() { return MOCK ? CACHE_KEY + '-mock' : CACHE_KEY; }
+  function cacheKey() {
+    if (!MOCK) return CACHE_KEY;
+    return CACHE_KEY + '-mock' + (MOCK_DOWN || MOCK_OFF.length ? '-' + MOCK_DOWN + '-' + MOCK_OFF.join() : '');
+  }
 
   function readCache() {
     try {
@@ -349,7 +363,7 @@
   function fetchJson(url) {
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
-    return fetch(url, {
+    return realFetch(url, {
       credentials: 'include',
       cache: 'no-store',
       headers: { 'X-Origin': 'client' },
@@ -378,9 +392,12 @@
     return wait.then(function () {
       var stored = read();
       if (stored) return stored;
-      return fetch(BASEURL + '/assets/js/admin/mock/kit-admin.json').then(function (r) { return r.json(); });
+      return realFetch(BASEURL + '/assets/js/admin/mock/kit-admin.json').then(function (r) { return r.json(); });
     }).then(function (d) {
-      return { spring: down('spring') ? null : d.spring, flask: down('flask') ? null : d.flask };
+      var pick = function (a) {
+        return MOCK_OFF.length ? Object.assign({}, a, { features: a.features.filter(function (f) { return MOCK_OFF.indexOf(f) === -1; }) }) : a;
+      };
+      return { spring: down('spring') ? null : pick(d.spring), flask: down('flask') ? null : pick(d.flask) };
     }).catch(function () { return { spring: null, flask: null }; });
   }
 
@@ -395,6 +412,8 @@
     writeOffStyle();
     apply(document);
     updateGate();
+    syncSideEffects();
+    if (state.settled) settledWaiters.splice(0).forEach(function (fn) { fn(); });
     try {
       document.dispatchEvent(new CustomEvent('ocs:kit', {
         detail: { enabled: state.enabled, source: state.source, known: state.known, settled: state.settled, mismatch: state.mismatch }
@@ -422,6 +441,176 @@
     });
   }
 
+  // ---------------------------------------------------------------- side effects (fail closed)
+
+  /** May this feature's side effects run now? Never before this page load has its answer. */
+  function canRun(id) {
+    if (!id || id === 'core') return true;
+    if (!state.settled) return false;
+    if (state.known) return isEnabled(id);
+    return (BUILD.deselected || []).indexOf(id) === -1 && built.indexOf(id) !== -1;
+  }
+
+  /** Run fn once, as soon as canRun(id) is true. */
+  function whenFeature(id, fn) {
+    if (canRun(id)) { fn(); return; }
+    var listener = function () {
+      if (!canRun(id)) return;
+      document.removeEventListener('ocs:kit', listener);
+      fn();
+    };
+    document.addEventListener('ocs:kit', listener);
+  }
+
+  var settledWaiters = [];
+  function whenSettled(fn) {
+    if (state.settled) fn(); else settledWaiters.push(fn);
+  }
+
+  var sideEffectsActive = false;
+  var recheckTimer = null;
+
+  function sideEffectStarted() {
+    sideEffectsActive = true;
+    if (!recheckTimer) recheckTimer = setInterval(function () { refresh(false); }, TTL_MS + 1000);
+  }
+
+  // Scripts cloned from a <template> would not keep their order: rebuild them so they run in place.
+  function liveCopy(fragment) {
+    fragment.querySelectorAll('script').forEach(function (old) {
+      var script = document.createElement('script');
+      Array.prototype.forEach.call(old.attributes, function (a) { if (a.name !== 'async' || old.src === '') script.setAttribute(a.name, a.value); });
+      if (old.src) script.async = old.hasAttribute('async');
+      script.textContent = old.textContent;
+      old.replaceWith(script);
+    });
+    return fragment;
+  }
+
+  function loadTemplate(t) {
+    t.setAttribute('data-kit-loaded', '');
+    var content = liveCopy(t.content.cloneNode(true));
+    if (t.parentNode === document.head) {       // scripts only: stopped by the request guard, never reloaded
+      t.parentNode.insertBefore(content, t.nextSibling);
+    } else {
+      var box = document.createElement('div');
+      box.style.display = 'contents';
+      box.appendChild(content);
+      t.parentNode.insertBefore(box, t.nextSibling);
+      t.kitBox = box;
+    }
+    sideEffectStarted();
+  }
+
+  function unloadTemplate(t) {
+    if (!t.kitBox) return;                      // head scripts keep running but cannot send
+    t.kitBox.remove();                          // widgets, their iframes and panels go
+    t.kitBox = null;
+    t.removeAttribute('data-kit-loaded');
+  }
+
+  function syncSideEffects() {
+    if (!state.settled) return;
+    var list = document.querySelectorAll('template[data-kit-load]');
+    for (var i = 0; i < list.length; i++) {
+      var allowed = canRun(list[i].getAttribute('data-kit-load'));
+      if (allowed && !list[i].hasAttribute('data-kit-loaded')) loadTemplate(list[i]);
+      else if (!allowed && list[i].hasAttribute('data-kit-loaded')) unloadTemplate(list[i]);
+    }
+  }
+
+  // Requests that belong to a feature wherever they come from; on a feature's own page, every
+  // cross-origin request except the sign-in check belongs to that page's feature.
+  var RULES = [
+    { any: ['analytics'], re: /\/api\/ocs-analytics|googletagmanager\.com|google-analytics\.com/ },
+    { any: ['social'], re: /utteranc\.es|disqus\.com|\/api\/(microblog|feedback)(\/|\?|$)/ },
+    { any: ['ai-chatbot', 'ai-grading'], re: /\/api\/gemini/ },
+    { any: ['game-engine'], re: /alphavantage\.co/ },
+    { any: ['lessons'], re: /api\.voicerss\.org/ },
+    { any: ['assignments'], re: /\/api\/challenge-submission/ }
+  ];
+  var IDENTITY = /\/api\/(person\/get|id|kit)(\/|\?|$)|\/authenticate(\?|$)/;
+
+  function ownersOf(url) {
+    var u;
+    try { u = new URL(String(url), location.href); } catch (e) { return null; }
+    for (var i = 0; i < RULES.length; i++) if (RULES[i].re.test(u.href)) return RULES[i].any;
+    if (pageFeature && u.host !== location.host && !IDENTITY.test(u.pathname)) return [pageFeature];
+    return null;
+  }
+
+  function mayRun(owners) { return owners.some(canRun); }
+
+  function blocked(url) { return 'Blocked by OCS-in-a-Kit: the feature for ' + url + ' is off'; }
+
+  function installGuards() {
+    if (realFetch) {
+      window.fetch = function (input, init) {
+        var url = input && input.url ? input.url : input;
+        var owners = ownersOf(url);
+        if (!owners) return realFetch(input, init);
+        return new Promise(function (resolve, reject) {
+          whenSettled(function () {
+            if (mayRun(owners)) resolve(realFetch(input, init));
+            else reject(new TypeError(blocked(url)));
+          });
+        });
+      };
+    }
+    if (window.XMLHttpRequest) {
+      var xhr = XMLHttpRequest.prototype, open = xhr.open, send = xhr.send;
+      xhr.open = function (method, url, async) {
+        this.kitOwners = ownersOf(url);
+        this.kitSync = async === false;
+        return open.apply(this, arguments);
+      };
+      xhr.send = function () {
+        var self = this, args = arguments, owners = this.kitOwners;
+        if (!owners) return send.apply(this, args);
+        var go = function () {
+          if (mayRun(owners)) send.apply(self, args);
+          else self.dispatchEvent(new Event('error'));
+        };
+        if (this.kitSync) { if (mayRun(owners)) return send.apply(this, args); throw new DOMException('blocked', 'NetworkError'); }
+        whenSettled(go);
+      };
+    }
+    if (navigator.sendBeacon) {
+      var beacon = navigator.sendBeacon.bind(navigator);
+      navigator.sendBeacon = function (url, data) {
+        var owners = ownersOf(url);
+        if (!owners) return beacon(url, data);
+        if (!state.settled) { whenSettled(function () { if (mayRun(owners)) beacon(url, data); }); return true; }
+        return mayRun(owners) ? beacon(url, data) : false;
+      };
+    }
+    if (window.WebSocket) {
+      var RealSocket = window.WebSocket;
+      var Guarded = function (url, protocols) {
+        var owners = ownersOf(url);
+        if (owners && !mayRun(owners)) throw new DOMException(blocked(url), 'SecurityError');
+        return protocols === undefined ? new RealSocket(url) : new RealSocket(url, protocols);
+      };
+      Guarded.prototype = RealSocket.prototype;
+      ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(function (k) { Guarded[k] = RealSocket[k]; });
+      window.WebSocket = Guarded;
+    }
+    // The camera on a feature's own page (face recognition) waits for the answer too.
+    var media = navigator.mediaDevices;
+    if (media && media.getUserMedia) {
+      var getUserMedia = media.getUserMedia.bind(media);
+      media.getUserMedia = function (constraints) {
+        if (!pageFeature) return getUserMedia(constraints);
+        return new Promise(function (resolve, reject) {
+          whenSettled(function () {
+            if (canRun(pageFeature)) resolve(getUserMedia(constraints));
+            else reject(new DOMException('This feature is turned off', 'NotAllowedError'));
+          });
+        });
+      };
+    }
+  }
+
   function setUser(user) {
     var roles = [];
     if (user) {
@@ -435,7 +624,8 @@
 
   window.OCS_KIT = {
     build: BUILD, state: state, isEnabled: isEnabled, isUrlEnabled: isUrlEnabled,
-    featureForUrl: featureForUrl, apply: apply, refresh: refresh, setUser: setUser, effective: effective
+    featureForUrl: featureForUrl, apply: apply, refresh: refresh, setUser: setUser, effective: effective,
+    canRun: canRun, whenFeature: whenFeature
   };
 
   document.addEventListener('ocs:user', function (e) { setUser(e.detail); });
@@ -443,6 +633,7 @@
   // ---------------------------------------------------------------- first paint
 
   pageFeature = featureForUrl(location.href);
+  installGuards();                 // before any page script can send anything
   var first = readCache();
   if (first) {
     useAnswers(first.answers, first.fresh ? 'cache' : 'stale');
@@ -468,6 +659,9 @@
         (window.requestAnimationFrame || setTimeout)(function () { pending = false; apply(document); });
       }).observe(document.body, { childList: true, subtree: true });
     }
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && sideEffectsActive) refresh(false);
+    });
     refresh(false);
   }
 

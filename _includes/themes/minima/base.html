@@ -7,18 +7,20 @@
     <body>
         {%- include themes/minima/header.html -%}
 
-        {%- comment -%} Social widgets only when the kit's social feature is on {%- endcomment -%}
+        {%- comment -%} Social widgets stay inert in a <template> until kit-features.js confirms social is on {%- endcomment -%}
         {%- assign kit_social = true -%}
         {%- if site.data.kit.disabled contains 'social' -%}{%- assign kit_social = false -%}{%- endif %}
         {% if page.microblog and kit_social %}
+          <template data-kit-load="social">
           <div class="micro-actions-wrapper">
             {% include microblog_foundation.html %}
             {% include inbox_foundation.html %}
           </div>
+          </template>
         {% endif %}
 
         {% if page.feedback and kit_social %}
-          {% include feedback_foundation.html %}
+          <template data-kit-load="social">{% include feedback_foundation.html %}</template>
         {% endif %}
 
         {% if page.admin %}

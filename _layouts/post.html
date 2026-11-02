@@ -1463,7 +1463,7 @@ Check if this is a course lesson and determine which course context to use
   {%- include utterances.html -%}
   {%- endunless -%}{%- endif -%}
   {%- if site.disqus.shortname -%}
-  {%- include disqus_comments.html -%}
+  <template data-kit-load="social">{%- include disqus_comments.html -%}</template>
   {%- endif -%}
   <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
 

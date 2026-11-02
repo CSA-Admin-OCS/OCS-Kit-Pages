@@ -479,6 +479,7 @@
               return;
           }
 
+          if (window.OCS_KIT && !window.OCS_KIT.canRun('lessons')) return;  // no text leaves the page while lessons are off
           const API_KEY = '{{ site.kit.voicerss_api_key }}';
           if (!API_KEY) { alert('Text-to-speech is not configured (set kit.voicerss_api_key in _config.yml).'); return; }
           const ttsUrl = `https://api.voicerss.org/?key=${API_KEY}&hl=en-us&src=${encodeURIComponent(selectedText)}&c=MP3&f=44khz_16bit_stereo`;

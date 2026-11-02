@@ -12,7 +12,7 @@
   {%- feed_meta -%}
   {%- endunless -%}
   {%- if jekyll.environment == 'production' and site.google_analytics -%}
-    {%- include google-analytics.html -%}
+    <template data-kit-load="analytics">{%- include google-analytics.html -%}</template>
   {%- endif -%}
 
   {%- include custom-head.html -%}

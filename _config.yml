@@ -47,6 +47,13 @@ kit:
   #   ["*"]                           every feature
   # See what a setting does before building: python scripts/apply_kit.py --list
   features: []
+  # Which pages this build contains:
+  #   all  every feature's pages ship and the browser shows or hides them from the backends'
+  #        live state, so an Admin can switch kits and features from the website with no rebuild.
+  #        name/features above are then only the fallback for when no backend answers.
+  #   kit  only the pages of name/features ship: a smaller site, but turning on any other
+  #        feature later needs a rebuild.
+  build: all
 
 # Build settings
 # --------------

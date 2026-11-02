@@ -14,6 +14,16 @@ _config.yml chooses the kit:
       # features: ["+finance-sim", "-hallpass"]   add/remove relative to the preset
       # features: ["lessons", "code-runner"]      explicit list (core is always on)
       # features: ["*"]                           every feature
+      build: all               # all | kit (which pages this build contains)
+
+kit.build decides what ships:
+
+    all   every feature's pages, notebooks and projects are built, and the browser shows or
+          hides them from the backends' live /api/kit answer (assets/js/kit-features.js). An
+          Admin can switch kits or features from the website with no rebuild. kit.name and
+          kit.features are then only the fallback for when no backend answers.
+    kit   pages of features outside kit.name/kit.features are left out of the build. The site
+          is smaller, but turning one of those features on later needs a rebuild.
 
 Usage (run from the repo root; `make` does this for you):
 
@@ -24,14 +34,19 @@ Usage (run from the repo root; `make` does this for you):
     python scripts/apply_kit.py --sync-canonical PATH   copy ids/names/kits from
                                            the OCS-Kit canonical catalog, keep "pages"
 
-Options: --kit NAME and --features "a,b,-c" override _config.yml (used to
-build test sites); --root DIR runs against another checkout.
+Options: --kit NAME and --features "a,b,-c" override _config.yml and, being a request for that
+exact site (test builds, `make KIT=vanilla`), imply --build kit unless --build all is given.
+--build all|kit overrides kit.build; --root DIR runs against another checkout.
 
 Generated files (gitignored, rewritten only when their content changes):
-    _config.kit.yml         exclude: (merged with _config.yml's list) + kit_enabled
-    _data/kit_features.json ["core", "lessons", ...]  -> site.data.kit_features
-    _data/kit.json          kit name, enabled/disabled ids, url->feature map,
-                            role labels -> site.data.kit and assets/js/kit-features.js
+    _config.kit.yml         exclude: (merged with _config.yml's list) + kit_enabled + kit_build
+    _data/kit_features.json features whose pages are in this build -> site.data.kit_features
+    _data/kit.json          -> site.data.kit and assets/js/kit-features.js:
+                              build     all | kit
+                              built     features whose pages are in this build
+                              disabled  features whose pages are NOT in this build (Liquid guards)
+                              enabled   the kit.name/kit.features selection (no-backend fallback)
+                              urls      url -> feature map, plus role labels
 """
 import argparse
 import fnmatch
@@ -52,6 +67,8 @@ CANONICAL_DEFAULT = os.path.join("..", "OCS-Kit", "kits", "catalog.json")
 LOCAL_FEATURE_KEYS = {"pages", "notes"}
 LOCAL_TOP_KEYS = {"description", "pages_help"}
 PAGE_EXTS = (".md", ".markdown", ".html", ".ipynb")
+BUILD_MODES = ("all", "kit")
+DEFAULT_BUILD = "all"
 
 
 # --------------------------------------------------------------------------
@@ -82,7 +99,7 @@ def load_config():
             section = line.split(":")[0].strip()
             continue
         if section == "kit":
-            m = re.match(r"^\s{2}(name|features):\s*(.*?)\s*(#.*)?$", line)
+            m = re.match(r"^\s{2}(name|features|build):\s*(.*?)\s*(#.*)?$", line)
             if m:
                 kit[m.group(1)] = json.loads(m.group(2)) if m.group(1) == "features" else m.group(2).strip("\"'")
         elif section == "exclude":
@@ -147,6 +164,24 @@ def resolve(catalog, kit_name, overrides):
         if spec.get("always_on"):
             enabled.add(fid)
     return [fid for fid in order if fid in enabled]
+
+
+def build_mode(args=None):
+    """all | kit: --build, else trimmed for an explicit --kit/--features, else kit.build."""
+    mode = getattr(args, "build", None)
+    if not mode and (getattr(args, "kit", None) or getattr(args, "features", None) is not None):
+        mode = "kit"
+    if not mode:
+        mode = (load_config().get("kit") or {}).get("build") or DEFAULT_BUILD
+    mode = str(mode).strip()
+    if mode not in BUILD_MODES:
+        raise KitError(f"unknown kit.build '{mode}' (choose one of: {', '.join(BUILD_MODES)})")
+    return mode
+
+
+def built_features(catalog, enabled, mode):
+    """Features whose pages this build contains."""
+    return list(catalog["features"]) if mode == "all" else list(enabled)
 
 
 def selection(args=None):
@@ -245,7 +280,7 @@ def disabled_patterns(catalog, enabled):
 def disabled_globs(prefix=None):
     """Patterns for disabled features using the current _config.yml (for converters)."""
     catalog, _, _, enabled = selection()
-    pats = disabled_patterns(catalog, enabled)
+    pats = disabled_patterns(catalog, built_features(catalog, enabled, build_mode()))
     return [p for p in pats if prefix is None or p.startswith(prefix)]
 
 
@@ -357,9 +392,11 @@ def admin_catalog_js(catalog):
 
 def apply(args):
     catalog, kit_name, overrides, enabled = selection(args)
-    disabled = [fid for fid in catalog["features"] if fid not in enabled]
+    mode = build_mode(args)
+    built = built_features(catalog, enabled, mode)
+    disabled = [fid for fid in catalog["features"] if fid not in built]
     base_exclude = list(load_config().get("exclude") or [])
-    exclude = base_exclude + [p for p in disabled_patterns(catalog, enabled) if p not in base_exclude]
+    exclude = base_exclude + [p for p in disabled_patterns(catalog, built) if p not in base_exclude]
     files = list(repo_files())
     urls = feature_urls(catalog, files)
     kit = catalog["kits"][kit_name]
@@ -367,13 +404,16 @@ def apply(args):
     lines = ["# GENERATED by scripts/apply_kit.py from _config.yml kit: + kits/catalog.json.",
              "# Do not edit; pass it after _config.yml: jekyll build --config _config.yml,_config.kit.yml",
              f"kit_name: {json.dumps(kit_name)}",
-             "kit_enabled: " + json.dumps(enabled),
+             f"kit_build: {json.dumps(mode)}",
+             "kit_enabled: " + json.dumps(built),
              "exclude:"] + [f"  - {json.dumps(p)}" for p in exclude]
     changed = write_if_changed("_config.kit.yml", "\n".join(lines) + "\n")
-    changed |= write_if_changed("_data/kit_features.json", json.dumps(enabled, indent=2) + "\n")
+    changed |= write_if_changed("_data/kit_features.json", json.dumps(built, indent=2) + "\n")
     data = {
         "kit": kit_name,
         "name": kit.get("name", kit_name),
+        "build": mode,
+        "built": built,
         "enabled": enabled,
         "disabled": disabled,
         "urls": urls,
@@ -388,7 +428,8 @@ def apply(args):
     changed |= write_if_changed("_data/kit.json", json.dumps(data, indent=2) + "\n")
     changed |= write_if_changed(ADMIN_CATALOG_JS, admin_catalog_js(catalog))
     if not args.quiet:
-        print(f"Kit: {kit_name} ({len(enabled)}/{len(catalog['features'])} features: {', '.join(enabled)})"
+        print(f"Kit: {kit_name}, build: {mode} ({len(built)}/{len(catalog['features'])} features built; "
+              f"preset: {', '.join(enabled)})"
               + (" [updated]" if changed else ""))
 
 
@@ -403,7 +444,11 @@ def cmd_list(args):
     for kid, kit in catalog["kits"].items():
         mark = "*" if kid == kit_name else " "
         print(f" {mark} {kid:10} {kit.get('name', '')}: {', '.join(kit['features'])}")
-    print(f"\nSelected: kit.name={kit_name}  kit.features={json.dumps(overrides)}")
+    mode = build_mode(args)
+    print(f"\nSelected: kit.name={kit_name}  kit.features={json.dumps(overrides)}  kit.build={mode}")
+    if mode == "all":
+        print("Build: all features' pages ship; Admins switch them from the website with no rebuild. "
+              "The selection below is the fallback for when no backend answers.")
     print(f"\n{'on':3} {'feature':17} {'category':10} {'pages':>5}  labels")
     for fid, f in feats.items():
         on = "yes" if fid in enabled else " - "
@@ -481,6 +526,7 @@ def cmd_check(args):
     # _config.yml selection
     try:
         selection(args)
+        build_mode(args)
     except KitError as e:
         errors.append(f"_config.yml kit: {e}")
 
@@ -520,7 +566,7 @@ def cmd_check(args):
 
 def cmd_enabled_projects(args):
     catalog, _, _, enabled = selection(args)
-    pats = disabled_patterns(catalog, enabled)
+    pats = disabled_patterns(catalog, built_features(catalog, enabled, build_mode(args)))
     wanted = None
     if args.projects is not None:
         wanted = args.projects.split()
@@ -571,6 +617,7 @@ def main():
     ap.add_argument("--root", help="repo root (default: current directory)")
     ap.add_argument("--kit", help="override kit.name")
     ap.add_argument("--features", help="override kit.features, comma separated (e.g. '+finance-sim,-hallpass')")
+    ap.add_argument("--build", choices=BUILD_MODES, help="override kit.build (--kit/--features imply kit)")
     ap.add_argument("--list", action="store_true", help="show kits, features and what is enabled")
     ap.add_argument("--check", action="store_true", help="validate kits/catalog.json (non-zero exit on errors)")
     ap.add_argument("--canonical", help="canonical catalog for --check (default ../OCS-Kit/kits/catalog.json or $OCS_KIT_CATALOG)")

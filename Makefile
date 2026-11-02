@@ -10,7 +10,7 @@ JEKYLL_CONFIG ?= _config.yml$(comma)_config.kit.yml$(if $(wildcard _config.local
 #   make KIT=vanilla            make FEATURES=+finance-sim,-social
 KIT ?=
 FEATURES ?=
-KIT_ARGS = $(if $(KIT),--kit $(KIT)) $(if $(FEATURES),--features=$(FEATURES))
+KIT_ARGS = $(if $(KIT),--kit $(KIT)) $(if $(FEATURES),--features=$(FEATURES)) $(if $(KIT_BUILD),--build $(KIT_BUILD))
 comma := ,
 
 SHELL = /bin/bash -c

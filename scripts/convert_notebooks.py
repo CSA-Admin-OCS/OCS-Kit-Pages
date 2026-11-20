@@ -62,7 +62,9 @@ import concurrent.futures, traceback, re
 from dataclasses import dataclass, asdict
 from typing import Any, Optional
 
-if __name__ == "__main__":
+# Worker processes started by forkserver/spawn (the default from Python 3.14) load this file as
+# __mp_main__ with scripts/ on sys.path, just like a direct run.
+if __name__ in ("__main__", "__mp_main__"):
     from progress_bar import ProgressBar
 else:
     from scripts.progress_bar import ProgressBar

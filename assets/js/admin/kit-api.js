@@ -336,3 +336,14 @@ async function mockCall(method, change, targets = BACKEND_IDS) {
     for (const b of targets) if (results[b].ok) results[b].data = state[b];
     return results;
 }
+
+// ------------------------------------------------------------------ site brand (Flask only)
+
+/** The site's brand: { name, tagline, logo_url, hero_image_url, hero_text }, '' where not set yet. */
+export function getBrand() { return call('flask', 'GET', '/api/kit/brand'); }
+
+/** Set any of those fields ('' clears one). Admins only; the backend checks. */
+export function saveBrand(fields) { return call('flask', 'PUT', '/api/kit/admin/brand', fields); }
+
+/** Back to unbranded. */
+export function clearBrand() { return call('flask', 'DELETE', '/api/kit/admin/brand'); }

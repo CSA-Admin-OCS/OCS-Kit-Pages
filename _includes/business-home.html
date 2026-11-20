@@ -1,0 +1,40 @@
+{%- comment -%}
+  Home page of the Business kit: unbranded until an Admin sets a name, logo and welcome text
+  (Admin > Branding). Every [data-brand] element holds a placeholder that assets/js/business-home.js
+  replaces with the saved value. Built from the shared ocs__ grammar only.
+{%- endcomment -%}
+<div class="ocs__container" id="home-business"{% unless build_kit == "business" %} style="display: none"{% endunless %}>
+  <div class="ocs__card">
+    <div class="ocs__badge" data-brand-placeholder="logo">Your logo</div>
+    <img class="ocs__image-frame ocs__image-frame--thumbnail" data-brand="logo" alt="" style="display: none">
+    <h1 data-brand="name">Your Company</h1>
+    <p class="ocs__lead" data-brand="tagline">Your tagline goes here</p>
+    <div class="ocs__links">
+      <a class="ocs__btn alert-green fill" href="{{ site.baseurl }}/login">Sign in</a>
+      <a class="ocs__btn" href="{{ site.baseurl }}/signup">Create an account</a>
+      <a class="ocs__btn accent" href="{{ site.baseurl }}/admin/brand/" data-feature-admin hidden>Brand this site</a>
+    </div>
+  </div>
+
+  <div class="ocs__card">
+    <img class="ocs__image-frame" data-brand="hero_image" alt="" style="display: none">
+    <div class="ocs__callout" data-brand-placeholder="hero_image">Your hero image goes here. Admins can add one in Admin &gt; Branding.</div>
+    <p data-brand="hero_text">Add a short welcome message for your visitors.</p>
+  </div>
+
+  <div class="ocs__card">
+    <h2 class="ocs__section-title">What is on this site</h2>
+    <div class="ocs__hub-grid">
+      <a class="ocs__hub-card" href="{{ site.baseurl }}/profile"><span class="ocs__nav-card-kicker">Account</span><span class="ocs__hub-card-title">Profile</span><p>Your account and details.</p></a>
+      <a class="ocs__hub-card" href="{{ site.baseurl }}/student/calendar" data-feature="calendar"><span class="ocs__nav-card-kicker">Plan</span><span class="ocs__hub-card-title">Calendar</span><p>Dates and schedules for your people.</p></a>
+      <a class="ocs__hub-card" href="{{ site.baseurl }}/analytics-dashboard" data-feature="analytics"><span class="ocs__nav-card-kicker">Measure</span><span class="ocs__hub-card-title">Analytics</span><p>Usage and activity across the site.</p></a>
+    </div>
+    <div class="ocs__links">
+      <span class="ocs__status-pill ocs__status-pill--good" data-feature="ai-chatbot">AI chatbot</span>
+      <span class="ocs__status-pill ocs__status-pill--good" data-feature="social">Chat and posts</span>
+      <span class="ocs__status-pill ocs__status-pill--good" data-feature="resume">Resumes and profiles</span>
+      <span class="ocs__status-pill ocs__status-pill--good" data-feature="calendar">Calendar</span>
+      <span class="ocs__status-pill ocs__status-pill--good" data-feature="analytics">Analytics</span>
+    </div>
+  </div>
+</div>

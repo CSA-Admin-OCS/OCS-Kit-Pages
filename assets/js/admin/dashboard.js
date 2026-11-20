@@ -69,6 +69,7 @@ function renderFeatures(features) {
 function renderLinks(features) {
     const isOn = id => features.some(f => f.id === id && f.enabled === true);
     const links = [
+        { href: `${base}/admin/brand/`, title: 'Branding', text: 'Set the site name, logo and welcome text. The site starts unbranded.' },
         { href: withMock(`${base}/admin/features/`), title: 'Feature Manager', text: 'Start from a kit, turn features on or off and follow each setup guide.' },
         { href: `${BACKENDS.spring.uri}/mvc/person/read`, title: 'Users and roles', text: 'Create accounts, reset passwords and change roles (Spring admin).' },
         { href: `${BACKENDS.spring.uri}/mvc/groups/read`, title: 'Groups', text: 'Create groups and add people to them (Spring admin).' },

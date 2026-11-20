@@ -4,6 +4,10 @@ title: Portfolio Home
 hide: true
 show_reading_time: false
 ---
+{% assign build_kit = site.data.kit.kit | default: site.kit.name %}
+{% include business-home.html %}
+
+<div id="home-default" markdown="1"{% if build_kit == "business" %} style="display: none"{% endif %}>
 
 Hi! My name is [Your Full Name]
 
@@ -99,3 +103,7 @@ Hi! My name is [Your Full Name]
 
 <br>
 <!-- markdownlint-enable MD033 MD046 -->
+
+</div>
+
+<script type="module" src="{{ site.baseurl }}/assets/js/business-home.js"></script>

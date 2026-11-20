@@ -207,6 +207,13 @@ $ocskit-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   flex-direction: column;
   gap: 0.6rem;
 
+  // Diagrams are drawn for ~1000px; break out of the narrow post column when the screen allows.
+  width: min(1100px, calc(100vw - 32px));
+  max-width: none;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+
   .ocskit-canvas {
     overflow-x: auto;
     border: 1px solid var(--k-line);
@@ -221,7 +228,7 @@ $ocskit-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     height: auto;
     color: var(--k-muted);
 
-    text { font-family: inherit; font-size: 13px; fill: var(--k-text); }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; fill: var(--k-text); }
     .t { font-weight: 600; font-size: 14px; }
     .m { font-family: $ocskit-mono; font-size: 12px; }
     .s { fill: var(--k-muted); font-size: 12px; }
@@ -241,16 +248,25 @@ $ocskit-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   figcaption { color: var(--k-muted); font-size: 0.9rem; max-width: 80ch; }
 }
 
+// Card titles are not headings, so they stay out of the page's table of contents.
+.ocskit-h {
+  display: block;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--k-text);
+}
+
 // ---------- numbered flow (a real sequence) ----------
 .ocskit-flow {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(var(--steps, 5), minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 0.75rem;
   counter-reset: ocskit-step;
-  @media (max-width: 860px) { grid-template-columns: minmax(0, 1fr); }
 
   li {
     @include ocskit-card;

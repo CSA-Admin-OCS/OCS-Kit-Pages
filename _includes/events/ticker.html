@@ -1,0 +1,17 @@
+{%- comment -%}
+  Upcoming-events ticker. Stays inert in a <template> until kit-features.js confirms the
+  'events' feature is on, so a site without it makes no request to the events API.
+  Turn it off for one page with `events_ticker: false` in the page's front matter.
+{%- endcomment -%}
+{%- unless site.data.kit.disabled contains 'events' or page.events_ticker == false -%}
+<template data-kit-load="events">
+  <section id="ocs-events-ticker" class="ocs-ticker" aria-label="Upcoming events" hidden>
+    <a class="ocs-ticker__label" href="{{ site.baseurl }}/events/">Upcoming events</a>
+    <div class="ocs-ticker__viewport">
+      <ul class="ocs-ticker__track"></ul>
+    </div>
+    <button type="button" class="ocs-ticker__pause" aria-pressed="false">Pause</button>
+  </section>
+  <script type="module" src="{{ site.baseurl }}/assets/js/events/ticker.js"></script>
+</template>
+{%- endunless -%}

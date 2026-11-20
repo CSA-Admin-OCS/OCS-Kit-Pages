@@ -587,6 +587,7 @@
   // cross-origin request except the sign-in check belongs to that page's feature.
   var RULES = [
     { any: ['analytics'], re: /\/api\/ocs-analytics|googletagmanager\.com|google-analytics\.com/ },
+    { any: ['events'], re: /\/api\/site-events(\/|\?|$)/ },
     { any: ['social'], re: /utteranc\.es|disqus\.com|\/api\/(microblog|feedback)(\/|\?|$)/ },
     { any: ['ai-chatbot', 'ai-grading'], re: /\/api\/gemini/ },
     { any: ['game-engine'], re: /alphavantage\.co/ },

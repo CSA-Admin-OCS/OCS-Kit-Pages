@@ -136,6 +136,17 @@ Every page asks both `{javaURI}/api/kit` and `{pythonURI}/api/kit` and caches th
 
 Tests: `make kit-test` (no dependencies) and `scripts/tests/kit_browser.js` (playwright-core, see its header).
 
+## Events
+
+The `events` feature (in every kit) shows admin-managed events. It needs the Flask backend and no Spring code.
+
+- **Ticker:** a strip under the header on every page that scrolls upcoming events in time order. It has a Pause button, pauses while you rest on an event, and stops moving for visitors who ask for reduced motion. A repeating event appears once, at its next date. Turn it off for one page with `events_ticker: false` in the page's front matter.
+- **Events page** (`/events/`): upcoming events with a Details panel per event (description, photos and the posts that are live now), and a button for past events.
+- **Gallery** (`/events/gallery/`): photos from recent events, with a keyboard-friendly viewer.
+- **Admin > Events** (`/admin/events/`, Admins only): add, edit and delete events, repeats, scheduled before/after posts and photos.
+
+All of it reads `GET /api/site-events` on the Flask backend. The ticker lives in a `<template data-kit-load="events">`, so a site with the feature off loads none of it and makes no request.
+
 ## Adding a new feature
 
 `kits/catalog.json` is the only file to edit; navigation guards read the generated `site.data.kit`.

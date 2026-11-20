@@ -161,4 +161,5 @@ minima:
   nav_pages:
     - lessons/index.md
     - lessons/guides.md
+    - navigation/events/index.md
     - navigation/search.md

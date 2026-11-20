@@ -56,7 +56,8 @@ export default {
       "name": "OCS Vanilla",
       "description": "Baseline site that can be handed to students: accounts, profile, blog and notebooks. Admins can add features later.",
       "features": [
-        "core"
+        "core",
+        "events"
       ],
       "roles": {
         "admin": {
@@ -79,6 +80,7 @@ export default {
       "description": "A full CS classroom: lessons, code runners, assignments and grading, game engine, AI chatbot tutor and AI grading, calendar, analytics, hall pass.",
       "features": [
         "core",
+        "events",
         "lessons",
         "code-runner",
         "assignments",
@@ -112,6 +114,7 @@ export default {
       "description": "For companies and organizations serving their own users (no students): accounts with Admin/Manager/Member roles, AI chatbot, posts and messaging, calendar, analytics, profiles/resumes. Add any other feature (code runners, game engine, finance simulation, Kasm, face recognition) from the admin dashboard.",
       "features": [
         "core",
+        "events",
         "ai-chatbot",
         "social",
         "calendar",
@@ -423,6 +426,23 @@ export default {
           "Add your term dates and events from the calendar page."
         ],
         "verify": "Open the calendar page and add an event."
+      }
+    },
+    "events": {
+      "name": "Events",
+      "category": "general",
+      "labels": [
+        "user-content"
+      ],
+      "description": "Admin-managed upcoming events that stream across the site in time order, with an events page. Simple announcements, separate from the Spring calendar.",
+      "setup": {
+        "summary": "Works out of the box. Only admins can add, edit or delete events.",
+        "settings": [],
+        "steps": [
+          "Open Admin > Events and add your first upcoming event.",
+          "Optionally mark an event as repeating (daily, weekly or monthly)."
+        ],
+        "verify": "Add an event starting soon; it should scroll across the top of the site."
       }
     },
     "analytics": {

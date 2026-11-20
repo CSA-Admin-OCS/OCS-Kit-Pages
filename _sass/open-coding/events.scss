@@ -1,0 +1,246 @@
+// Events feature: the site-wide ticker, the events page and the photo gallery.
+// Colors come from the user-preference tokens so light, dark and custom themes all work.
+
+.ocs-ticker {
+  --ticker-seconds: 30s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.9rem;
+  background: color-mix(in srgb, var(--pref-accent-color) 14%, var(--pref-bg-color));
+  border-bottom: 1px solid color-mix(in srgb, var(--pref-text-color) 18%, transparent);
+  color: var(--pref-text-color);
+  font-size: 0.95rem;
+
+  &[hidden] { display: none; }
+
+  a { color: inherit; text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--pref-accent-color); outline-offset: 2px; }
+
+  &__label {
+    flex: none;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__viewport {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    overflow: hidden;
+    // Fade the edges so items glide in and out instead of being cut off.
+    mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  }
+
+  &__track {
+    flex: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 100%;
+    animation: ocs-ticker-slide var(--ticker-seconds) linear infinite;
+  }
+
+  &__item {
+    flex: none;
+    padding-right: 3rem;
+    white-space: nowrap;
+
+    a { display: inline-flex; gap: 0.6rem; align-items: baseline; }
+  }
+
+  &__when { opacity: 0.85; }
+  &__where { opacity: 0.7; }
+  &__where::before { content: "· "; }
+
+  &__pause {
+    flex: none;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  // Resting the pointer or the keyboard focus on an event pauses it so it can be read and opened.
+  // The Pause/Play button itself does not, so pressing Play always starts the motion.
+  &__viewport:hover &__track,
+  &__viewport:focus-within &__track,
+  &.is-paused &__track { animation-play-state: paused; }
+}
+
+@keyframes ocs-ticker-slide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+
+// Motion is optional: with reduced motion the strip stops moving and the list scrolls by hand.
+@media (prefers-reduced-motion: reduce) {
+  .ocs-ticker {
+    &__viewport { overflow-x: auto; mask-image: none; }
+    &__track { animation: none; }
+    &__track--copy, &__pause { display: none; }
+  }
+}
+
+.ocs-events {
+  max-width: 900px;
+  margin: 0 auto;
+  color: var(--pref-text-color);
+
+  &__head h1 { margin-bottom: 0.4rem; }
+  &__status { padding: 0.8rem 1rem; border: 1px dashed currentColor; border-radius: 0.5rem; }
+  &__status[hidden] { display: none; }
+
+  &__list, &__photos { list-style: none; margin: 1rem 0; padding: 0; }
+
+  &__card {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--pref-text-color) 18%, transparent);
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--pref-text-color) 5%, var(--pref-bg-color));
+
+    &.is-past { opacity: 0.8; }
+    &:target { outline: 2px solid var(--pref-accent-color); }
+  }
+
+  &__date {
+    flex: none;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 6.5rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--pref-accent-color) 18%, var(--pref-bg-color));
+    text-align: center;
+    font-weight: 700;
+    span:last-child { font-weight: 400; font-size: 0.9rem; }
+  }
+
+  &__body { flex: 1; min-width: 0; }
+  &__body h3 { margin: 0 0 0.2rem; }
+  &__meta { margin: 0 0 0.6rem; opacity: 0.85; }
+  &__panel { margin-top: 0.8rem; }
+  &__panel[hidden] { display: none; }
+  &__description { white-space: pre-wrap; overflow-wrap: anywhere; }
+  &__post { margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid color-mix(in srgb, var(--pref-text-color) 14%, transparent); }
+  &__post h4 { margin: 0 0 0.3rem; }
+  &__post p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+  &__tag { margin-left: 0.6rem; padding: 0.05rem 0.5rem; border: 1px solid currentColor; border-radius: 1rem; font-size: 0.75rem; font-weight: 400; }
+  &__photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.5rem; }
+  &__photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.4rem; }
+  &__error { color: var(--pref-error-color, #dc2626); }
+}
+
+@media (max-width: 560px) {
+  .ocs-events__card { flex-direction: column; }
+  .ocs-events__date { flex-direction: row; justify-content: space-between; align-self: stretch; }
+  .ocs-ticker__label { display: none; }
+}
+
+.ocs-gallery {
+  &__grid {
+    list-style: none;
+    margin: 1rem 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.8rem;
+  }
+
+  &__thumb {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--pref-text-color) 18%, transparent);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: none;
+    color: var(--pref-text-color);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+    span { display: block; padding: 0.4rem 0.6rem; font-size: 0.9rem; }
+    &:focus-visible { outline: 2px solid var(--pref-accent-color); outline-offset: 2px; }
+  }
+
+  &__box {
+    width: 92vw;
+    max-width: 1000px;
+    padding: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--pref-text-color) 25%, transparent);
+    border-radius: 0.6rem;
+    background: var(--pref-bg-color);
+    color: var(--pref-text-color);
+
+    &::backdrop { background: rgba(0, 0, 0, 0.75); }
+    figure { margin: 0; }
+    img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; }
+    figcaption { margin-top: 0.5rem; text-align: center; }
+  }
+
+  &__controls { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.6rem; }
+}
+
+// Admin > Events
+.ocs-admin-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem 1rem;
+  margin: 0.8rem 0;
+
+  label { display: flex; flex-direction: column; gap: 0.25rem; font-weight: 600; }
+  input, select, textarea { font-weight: 400; max-width: 100%; }
+  // The site's input style does not reach <select>, which fell back to dark text on a dark page.
+  select,
+  select option {
+    background-color: color-mix(in srgb, var(--pref-text-color) 6%, var(--pref-bg-color));
+    color: var(--pref-text-color);
+  }
+  select {
+    min-height: 2.6rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--pref-text-color) 25%, transparent);
+    border-radius: 0.5rem;
+    font: inherit;
+    color-scheme: dark light;
+  }
+  &__wide, &__actions { grid-column: 1 / -1; }
+  &__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+}
+
+.ocs-admin-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__item {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--pref-text-color) 16%, transparent);
+    &.is-draft, &.is-cancelled { opacity: 0.75; }
+  }
+  &__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
+  &__meta { opacity: 0.85; }
+  &__buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  &__panel { margin-top: 0.8rem; padding: 0.8rem; border-radius: 0.5rem; background: color-mix(in srgb, var(--pref-text-color) 5%, var(--pref-bg-color)); }
+  &__panel[hidden] { display: none; }
+  &__panel h4 { margin: 0.8rem 0 0.3rem; }
+}
+
+.ocs-admin-photos {
+  list-style: none;
+  padding: 0;
+  li { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
+  img { object-fit: cover; border-radius: 0.3rem; }
+}

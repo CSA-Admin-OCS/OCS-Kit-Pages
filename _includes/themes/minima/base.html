@@ -7,6 +7,8 @@
     <body>
         {%- include themes/minima/header.html -%}
 
+        {%- include events/ticker.html -%}
+
         {%- comment -%} Social widgets stay inert in a <template> until kit-features.js confirms social is on {%- endcomment -%}
         {%- assign kit_social = true -%}
         {%- if site.data.kit.disabled contains 'social' -%}{%- assign kit_social = false -%}{%- endif %}

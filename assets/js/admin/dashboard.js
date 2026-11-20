@@ -75,6 +75,7 @@ function renderLinks(features) {
         { href: `${BACKENDS.flask.uri}/users/table2`, title: 'Flask users', text: 'User table on the Flask backend.' },
         { href: `${BACKENDS.flask.uri}/sections/`, title: 'Sections', text: 'Sections/classes on the Flask backend.' },
     ];
+    if (isOn('events')) links.push({ href: `${base}/admin/events/`, title: 'Events', text: 'Add, edit and delete events, schedule posts and add photos.' });
     if (isOn('analytics')) links.push({ href: `${base}/analytics-dashboard`, title: 'Analytics', text: 'Usage and activity across the site.' });
     document.getElementById('admin-links').innerHTML = links.map(l =>
         `<li><a href="${esc(l.href)}"><strong>${esc(l.title)}</strong><span>${esc(l.text)}</span></a></li>`).join('');

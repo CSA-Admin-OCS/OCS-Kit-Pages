@@ -1,0 +1,509 @@
+// Page-scoped styles for the OCS-in-a-Kit overview (/ocs-kit/how-it-works/,
+// _notebooks/OCS-Kit/). Every color comes from the user-preference tokens, so light, dark and
+// custom themes all work. Status is always shown with a word and a glyph, never color alone.
+
+$ocskit-radius: 10px;
+$ocskit-gap: 1rem;
+$ocskit-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+@mixin ocskit-card {
+  background: var(--k-panel);
+  border: 1px solid var(--k-line);
+  border-radius: $ocskit-radius;
+  padding: 1rem 1.1rem;
+  min-width: 0;
+}
+
+@mixin ocskit-label {
+  font-family: $ocskit-mono;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--k-muted);
+}
+
+.ocskit {
+  --k-text: var(--pref-text-color, #e6e6e6);
+  --k-bg: var(--pref-bg-color, #181818);
+  --k-accent: var(--pref-accent-color, #3b82f6);
+  --k-ok: var(--pref-success-color, #22a06b);
+  --k-warn: var(--pref-warning-color, #d97706);
+  --k-line: color-mix(in srgb, var(--k-text) 16%, transparent);
+  --k-panel: color-mix(in srgb, var(--k-text) 6%, var(--k-bg));
+  --k-raised: color-mix(in srgb, var(--k-text) 10%, var(--k-bg));
+  --k-muted: color-mix(in srgb, var(--k-text) 68%, var(--k-bg));
+  --k-accent-soft: color-mix(in srgb, var(--k-accent) 18%, var(--k-bg));
+  --k-ok-soft: color-mix(in srgb, var(--k-ok) 18%, var(--k-bg));
+  --k-warn-soft: color-mix(in srgb, var(--k-warn) 18%, var(--k-bg));
+
+  color: var(--k-text);
+  margin: 1.25rem 0 2rem;
+
+  p { margin: 0; }
+  a { color: var(--k-accent); }
+  code {
+    font-family: $ocskit-mono;
+    font-size: 0.88em;
+    padding: 0.08em 0.35em;
+    border-radius: 0.3em;
+    background: var(--k-raised);
+    overflow-wrap: anywhere;
+  }
+}
+
+.ocskit-label { @include ocskit-label; }
+.ocskit-lede { font-size: 1.15rem; line-height: 1.5; max-width: 62ch; }
+.ocskit-note { color: var(--k-muted); font-size: 0.92rem; max-width: 70ch; margin-top: 0.6rem !important; }
+
+// ---------- hero ----------
+.ocskit-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  border-radius: $ocskit-radius + 4;
+  border: 1px solid var(--k-line);
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--k-accent-soft) 0%, transparent 55%),
+    var(--k-panel);
+}
+
+.ocskit-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  @media (max-width: 720px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.ocskit-stat {
+  @include ocskit-card;
+  background: var(--k-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  b { font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--k-accent); }
+  span { color: var(--k-muted); font-size: 0.9rem; }
+}
+
+.ocskit-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  a {
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--k-line);
+    background: var(--k-bg);
+    color: var(--k-text);
+    &:hover, &:focus-visible { border-color: var(--k-accent); color: var(--k-accent); }
+  }
+}
+
+// ---------- generic card grids ----------
+.ocskit-grid {
+  display: grid;
+  gap: $ocskit-gap;
+  &--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  &--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  &--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 860px) { &--3, &--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { &--2, &--3, &--4 { grid-template-columns: minmax(0, 1fr); } }
+}
+
+.ocskit-card {
+  @include ocskit-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  h4 { margin: 0; font-size: 1.05rem; }
+  p { color: var(--k-muted); font-size: 0.93rem; line-height: 1.45; }
+  &--accent { border-top: 3px solid var(--k-accent); }
+}
+
+.ocskit-big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--k-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+// ---------- kits ----------
+.ocskit-kit {
+  @include ocskit-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border-top: 4px solid var(--kit-color);
+
+  &--vanilla { --kit-color: color-mix(in srgb, var(--k-text) 55%, var(--k-bg)); }
+  &--education { --kit-color: var(--k-accent); }
+  &--business { --kit-color: var(--k-warn); }
+
+  h4 { margin: 0; font-size: 1.2rem; }
+  p { color: var(--k-muted); font-size: 0.92rem; }
+}
+
+.ocskit-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  span {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--k-raised);
+  }
+}
+
+.ocskit-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--k-muted);
+  i {
+    display: block;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--kit-color) var(--fill), var(--k-raised) var(--fill));
+  }
+}
+
+// feature matrix
+.ocskit-matrix {
+  overflow-x: auto;
+  border: 1px solid var(--k-line);
+  border-radius: $ocskit-radius;
+  background: var(--k-panel);
+  margin-top: $ocskit-gap;
+
+  table { width: 100%; border-collapse: collapse; min-width: 520px; margin: 0; font-size: 0.9rem; }
+  th, td { padding: 0.45rem 0.8rem; border: 0; border-bottom: 1px solid var(--k-line); text-align: left; background: transparent; }
+  tr:last-child td { border-bottom: 0; }
+  th { @include ocskit-label; }
+  td.dot, th.dot { text-align: center; width: 5.5rem; }
+  td.dot b { color: var(--k-accent); font-size: 1.1rem; }
+  td.dot span { color: var(--k-line); }
+}
+
+.ocskit-tag {
+  font-family: $ocskit-mono;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--k-line);
+  color: var(--k-muted);
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+
+// ---------- diagrams ----------
+.ocskit-diagram {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  .ocskit-canvas {
+    overflow-x: auto;
+    border: 1px solid var(--k-line);
+    border-radius: $ocskit-radius;
+    background: var(--k-panel);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    min-width: 780px;
+    height: auto;
+    color: var(--k-muted);
+
+    text { font-family: inherit; font-size: 13px; fill: var(--k-text); }
+    .t { font-weight: 600; font-size: 14px; }
+    .m { font-family: $ocskit-mono; font-size: 12px; }
+    .s { fill: var(--k-muted); font-size: 12px; }
+    .h, .lbl { font-family: $ocskit-mono; font-size: 11px; fill: var(--k-muted); }
+    .h { letter-spacing: 0.08em; }
+    .box { fill: var(--k-bg); stroke: var(--k-line); stroke-width: 1.2; }
+    .key { fill: var(--k-accent-soft); stroke: var(--k-accent); stroke-width: 1.6; }
+    .key-t { fill: var(--k-accent); font-weight: 600; }
+    .frame { fill: none; stroke: var(--k-muted); stroke-opacity: 0.6; stroke-width: 1.2; stroke-dasharray: 6 5; }
+    .ln { fill: none; stroke: currentColor; stroke-width: 1.4; }
+    .ln-a { fill: none; stroke: var(--k-accent); stroke-width: 1.8; }
+    .tip { fill: currentColor; }
+    .tip-a { fill: var(--k-accent); }
+    .wt { fill: var(--k-warn); font-family: $ocskit-mono; font-size: 11px; }
+  }
+
+  figcaption { color: var(--k-muted); font-size: 0.9rem; max-width: 80ch; }
+}
+
+// ---------- numbered flow (a real sequence) ----------
+.ocskit-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--steps, 5), minmax(0, 1fr));
+  gap: 0.75rem;
+  counter-reset: ocskit-step;
+  @media (max-width: 860px) { grid-template-columns: minmax(0, 1fr); }
+
+  li {
+    @include ocskit-card;
+    position: relative;
+    counter-increment: ocskit-step;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-top: 2.6rem;
+    margin: 0;
+
+    &::before {
+      content: counter(ocskit-step);
+      position: absolute;
+      top: 0.8rem;
+      left: 1.1rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: var(--k-accent);
+      color: var(--k-bg);
+    }
+
+    b { font-size: 1rem; }
+    span { color: var(--k-muted); font-size: 0.88rem; line-height: 1.4; }
+    em { @include ocskit-label; font-style: normal; color: var(--k-accent); }
+  }
+}
+
+// ---------- do / don't ----------
+.ocskit-rule {
+  @include ocskit-card;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  font-size: 0.93rem;
+  line-height: 1.45;
+
+  &::before {
+    content: "✓";
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    background: var(--k-ok-soft);
+    color: var(--k-ok);
+  }
+  &--no::before { content: "✕"; background: var(--k-warn-soft); color: var(--k-warn); }
+}
+
+// ---------- compare two options ----------
+.ocskit-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $ocskit-gap;
+  @media (max-width: 680px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.ocskit-option {
+  @include ocskit-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  &--chosen { border-color: var(--k-accent); background: var(--k-accent-soft); }
+
+  header { display: flex; flex-direction: column; gap: 0.2rem; }
+  header code { font-size: 1rem; align-self: flex-start; }
+  h4 { margin: 0; font-size: 1.1rem; }
+}
+
+.ocskit-containers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  span {
+    font-family: $ocskit-mono;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    background: var(--k-bg);
+    border: 1px solid var(--k-line);
+  }
+  .off { opacity: 0.45; text-decoration: line-through; }
+}
+
+// ---------- status ----------
+.ocskit-progress {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 3px;
+  margin: 0.4rem 0 0.6rem;
+  span { flex: 1; background: var(--k-raised); }
+  .done { background: var(--k-ok); }
+  .part { background: var(--k-warn); }
+}
+
+.ocskit-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--k-muted);
+}
+
+.ocskit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: $ocskit-mono;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--k-line);
+  color: var(--k-muted);
+  white-space: nowrap;
+  align-self: flex-start;
+
+  &::before { content: "○"; }
+  &--done { color: var(--k-ok); border-color: var(--k-ok); background: var(--k-ok-soft); &::before { content: "✓"; } }
+  &--part { color: var(--k-warn); border-color: var(--k-warn); background: var(--k-warn-soft); &::before { content: "◐"; } }
+  &--later::before { content: "…"; }
+}
+
+.ocskit-step {
+  @include ocskit-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  border-left: 4px solid var(--k-line);
+  &--done { border-left-color: var(--k-ok); }
+  &--part { border-left-color: var(--k-warn); }
+
+  .num { @include ocskit-label; }
+  h4 { margin: 0; font-size: 1rem; }
+  p { color: var(--k-muted); font-size: 0.88rem; line-height: 1.4; }
+}
+
+// ---------- timeline ----------
+.ocskit-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.5rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, 1fr);
+  gap: 0;
+  overflow-x: auto;
+
+  li {
+    position: relative;
+    margin: 0;
+    padding: 2.1rem 0.9rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.86rem;
+    line-height: 1.35;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0.55rem;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--k-line);
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0.1rem;
+      left: 0;
+      width: 0.95rem;
+      height: 0.95rem;
+      border-radius: 50%;
+      background: var(--k-bg);
+      border: 3px solid var(--k-accent);
+    }
+    &.today::after { background: var(--k-accent); }
+  }
+
+  time { font-family: $ocskit-mono; font-size: 0.78rem; color: var(--k-accent); font-weight: 600; }
+}
+
+// ---------- repo chain ----------
+.ocskit-chain {
+  @include ocskit-card;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.3fr) auto minmax(0, 1.3fr);
+  align-items: center;
+  gap: 0.6rem;
+  @media (max-width: 760px) {
+    grid-template-columns: minmax(0, 1fr);
+    .arrow { transform: rotate(90deg); justify-self: start; }
+  }
+
+  > div { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .arrow { color: var(--k-muted); font-size: 1.1rem; }
+  small { @include ocskit-label; }
+  code { background: transparent; padding: 0; font-size: 0.85rem; }
+  p { color: var(--k-muted); font-size: 0.85rem; grid-column: 1 / -1; }
+}
+
+.ocskit-stack { display: flex; flex-direction: column; gap: 0.75rem; }
+
+// ---------- explanation text and talking points ----------
+.ocskit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: 72ch;
+  line-height: 1.6;
+  margin-bottom: $ocskit-gap;
+}
+
+.ocskit-explain {
+  border-radius: $ocskit-radius;
+  border: 1px solid var(--k-accent);
+  background: var(--k-accent-soft);
+  padding: 0.9rem 1.1rem;
+  margin-top: $ocskit-gap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .ocskit-label { color: var(--k-accent); }
+  ul { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  li { line-height: 1.5; margin: 0; }
+}
+
+// ---------- commands ----------
+.ocskit-details {
+  @include ocskit-card;
+  summary { cursor: pointer; font-weight: 600; }
+  pre {
+    margin: 0.7rem 0 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    background: var(--k-bg);
+    border: 1px solid var(--k-line);
+    overflow-x: auto;
+    font-size: 0.82rem;
+  }
+  pre code { background: transparent; padding: 0; }
+  p { color: var(--k-muted); font-size: 0.9rem; margin-top: 0.7rem; }
+}

@@ -27,8 +27,8 @@ const DOMAIN_HALF = 14;                                // 28 x 28 world units
 const REST_NDC = new THREE.Vector2(0.30, -0.21);       // where the water is stirred when the cursor is away: about 65% across, 60% down
 const REACH = { x0: -1, x1: 1, y0: -1, y1: 1 };               // the cursor reaches the whole hero
 const SIM_STEP = 1 / 120;                              // fixed simulation step
-const SIM_SPEED = 0.2;                                 // wave speed squared, in texels per step
-const SIM_DAMPING = 0.972;
+const SIM_SPEED = 0.10;                                 // wave speed squared, in texels per step
+const SIM_DAMPING = 0.96;
 
 // ------------------------------------------------------------------------------------------ simulation shaders
 
@@ -415,10 +415,10 @@ export function startPearlHero(host, options = {}) {
     // small gentle rings, fast movement makes bigger waves.
     const moved = prevTip.distanceTo(tipWorld);
     if (moved > 1e-4) {
-      splat(prevTip.x, prevTip.z, tipWorld.x, tipWorld.z, 0.15 + Math.min(speed * 0.004, 0.10), Math.min(Math.max(speed - 0.6, 0) * 0.6 * dt, 0.10));      // slow drift adds nothing; real movement adds waves
+      splat(prevTip.x, prevTip.z, tipWorld.x, tipWorld.z, 0.11 + Math.min(speed * 0.002, 0.05), Math.min(Math.max(speed - 0.6, 0) * 0.45 * dt, 0.07));      // slow drift adds nothing; real movement adds waves
     }
     // the stirred point trembles very slightly, sending a steady train of concentric rings outward, so the water is never still
-    splat(tipWorld.x, tipWorld.z, tipWorld.x, tipWorld.z, 0.22, Math.sin(elapsed * 15.0) * 0.40 * dt);
+    splat(tipWorld.x, tipWorld.z, tipWorld.x, tipWorld.z, 0.22, Math.sin(elapsed * 15.0) * 0.25 * dt);
 
     // fixed-step simulation, so the water behaves the same at any refresh rate
     accumulator = Math.min(accumulator + dt, SIM_STEP * 5);

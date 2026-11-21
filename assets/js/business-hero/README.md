@@ -20,7 +20,7 @@ NODE_PATH=$PWD/node_modules ./node_modules/.bin/esbuild /path/to/assets/js/busin
 
 ## What to tune
 
-- Water simulation: `SIM_SPEED`, `SIM_DAMPING` (higher number = waves travel farther), `SIM_STEP`, and the trembling source in `update()`.
+- Water simulation: `SIM_SPEED` and `SIM_DAMPING` (lower = ripples stay smaller and closer to the cursor), `SIM_STEP`, and the trembling source in `update()`.
 - Cursor wake: the `splat()` call in `update()` (radius and strength grow with speed; slow drift adds nothing).
 - Where the water rests when the cursor is away: `REST_NDC`. How far the cursor reaches: `REACH` (the whole hero).
 - Water shading: `WATER_FRAG` (ripple strength, palette, caustics,).

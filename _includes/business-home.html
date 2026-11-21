@@ -1,12 +1,12 @@
 {%- comment -%}
   Home page of the Business kit: an unbranded pearlescent landing page. The name, tagline, welcome
   text, logo and hero image are placeholders until an Admin fills them in (Admin > Branding);
-  assets/js/business-home.js swaps in the saved values. Styles: _sass/open-coding/business-home.scss.
+  assets/js/business-home.js swaps in the saved values. Included at /business/ (business.md) with force=true, which shows it on any build; on the Business kit it is also the home page. Styles: _sass/open-coding/business-home.scss.
   The hero art is a real-time WebGL scene (pearl water that ripples under the cursor, filling the whole page behind the content) started by assets/js/business-home.js
   from assets/js/vendor/pearl-hero.js; its source is in assets/js/business-hero/.
 {%- endcomment -%}
 <link rel="stylesheet" href="{{ '/assets/css/business-home.css' | relative_url }}">
-<div class="ocs__pearl" id="home-business"{% unless build_kit == "business" %} hidden{% endunless %}>
+<div class="ocs__pearl" id="home-business"{% if include.force %} data-forced{% endif %}{% unless build_kit == "business" or include.force %} hidden{% endunless %}>
 
   {%- comment -%} The water: a layer as tall as the whole page, holding one window-sized stage that stays put while you scroll. {%- endcomment %}
   <div class="ocs__pearl-water" aria-hidden="true"><div class="ocs__pearl-art" data-pearl-art></div></div>
@@ -26,6 +26,7 @@
         <span data-brand="name">Your Organization</span>
       </a>
       <div class="ocs__pearl-links">
+        {%- if include.force %}<a href="{{ site.baseurl }}/">All kits</a>{% endif %}
         <a href="#top">Overview</a>
         <a href="#features">Features</a>
         <a href="{{ site.baseurl }}/student/calendar" data-feature="calendar">Schedule</a>

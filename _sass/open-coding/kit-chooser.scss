@@ -1,0 +1,109 @@
+// The kit chooser on the OCS Vanilla home page: three cards, one per kit.
+// Colours are SASS variables; the pearl accents match the Business site this chooser leads to.
+
+$ink: #1b1d29;
+$ink-muted: #5f6478;
+$line: rgba(27, 29, 41, 0.14);
+$pearl: (
+  "lavender": #eceaf6,
+  "ice":      #dfeaf7,
+  "silver":   #f6f7fb
+);
+$holo: (
+  "aqua":  #7fe6ee,
+  "lilac": #bba7f6,
+  "pink":  #f7b3d4,
+  "blue":  #7ba4ff
+);
+$radius: 22px;
+$ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+@function pearl($key) { @return map-get($pearl, $key); }
+@function holo($key) { @return map-get($holo, $key); }
+@mixin mobile { @media (max-width: 760px) { @content; } }
+@mixin tablet { @media (max-width: 1000px) { @content; } }
+
+.ocs__kits {
+  margin: 0 0 3rem;
+  padding: 2.4rem 0 0.5rem;
+  color: $ink;
+  * { box-sizing: border-box; }
+}
+.ocs__kits-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: $ink-muted;
+}
+.ocs__kits-title {
+  margin: 0.6rem 0 0;
+  font-size: 1.9rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: inherit;
+}
+.ocs__kits-lead {
+  margin: 0.7rem 0 0;
+  max-width: 34rem;
+  line-height: 1.6;
+  color: $ink-muted;
+}
+.ocs__kits-grid {
+  margin-top: 1.8rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem;
+  @include tablet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @include mobile { grid-template-columns: 1fr; }
+}
+.ocs__kits-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.7rem 1.6rem 1.5rem;
+  border-radius: $radius;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: linear-gradient(150deg, pearl("lavender"), pearl("ice") 55%, pearl("silver"));
+  box-shadow: 0 24px 60px -34px rgba(70, 80, 130, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: $ink;
+  text-decoration: none;
+  transition: transform 0.35s $ease, box-shadow 0.35s $ease, opacity 0.35s $ease;
+  h3 { margin: 0; font-size: 1.25rem; font-weight: 500; letter-spacing: -0.01em; color: inherit; }
+  p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: $ink-muted; }
+  &::before {                                              // a hairline of iridescence along the top edge
+    content: "";
+    position: absolute;
+    left: 1.5rem; right: 1.5rem; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, holo("aqua"), holo("lilac"), holo("pink"), transparent);
+    opacity: 0.85;
+  }
+  &.is-link:hover, &.is-link:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 34px 70px -28px rgba(123, 164, 255, 0.6), inset 0 1px 0 #fff;
+  }
+  &.is-link:focus-visible { outline: 2px solid holo("blue"); outline-offset: 3px; }
+  &.is-current { box-shadow: 0 0 0 2px rgba(123, 164, 255, 0.55), 0 24px 60px -34px rgba(70, 80, 130, 0.55); }
+  &.is-soon { opacity: 0.72; }
+}
+.ocs__kits-tag {
+  font-size: 10px !important;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: $ink-muted !important;
+}
+.ocs__kits-go {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: $ink;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ocs__kits-card { transition: none; }
+  .ocs__kits-card.is-link:hover { transform: none; }
+}

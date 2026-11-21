@@ -1,0 +1,29 @@
+{%- comment -%}
+  The kit chooser on the OCS Vanilla home page: pick a kit and go to that kit's own website UI.
+  Business lives at /business/. Education and Vanilla get their own UI pages from the rest of the team;
+  until a page exists, its card says so. Styles: _sass/open-coding/kit-chooser.scss.
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/kit-chooser.css' | relative_url }}">
+<section class="ocs__kits" id="home-kits" aria-labelledby="ocs-kits-title">
+<p class="ocs__kits-eyebrow">OCS in a Kit</p>
+<h2 class="ocs__kits-title" id="ocs-kits-title">Choose a kit</h2>
+<p class="ocs__kits-lead">This is OCS Vanilla, the baseline site. Pick a kit to see its website.</p>
+<div class="ocs__kits-grid">
+<article class="ocs__kits-card is-current" aria-current="page">
+<p class="ocs__kits-tag">You are here</p>
+<h3>Vanilla</h3>
+<p>The baseline site: sign in, profile, blog and the core platform. Safe to hand to anyone.</p>
+</article>
+<a class="ocs__kits-card is-link" href="{{ site.baseurl }}/business/">
+<p class="ocs__kits-tag">Open</p>
+<h3>Business</h3>
+<p>For organizations: chat and posts, calendar, analytics, an AI assistant and resumes, under your own brand.</p>
+<span class="ocs__kits-go" aria-hidden="true">View the Business site &rarr;</span>
+</a>
+<article class="ocs__kits-card is-soon">
+<p class="ocs__kits-tag">In progress</p>
+<h3>Education</h3>
+<p>For classrooms: lessons, code runners, assignments and games. Its website is being designed.</p>
+</article>
+</div>
+</section>

@@ -1,7 +1,7 @@
 ---
 ---
-// Business home page: shows it instead of the standard home page when the site runs the Business
-// kit, fills the name, tagline, welcome text, logo and hero image from the saved brand (Admin >
+// Business home page: shown at /business/ on any build, and instead of the standard home page when
+// the site runs the Business kit. It fills the name, tagline, welcome text, logo and hero image from the saved brand (Admin >
 // Branding), and drives the side indicators and the gentle mouse parallax.
 // Anything not set yet keeps its placeholder. Styling is all in _sass/open-coding/business-home.scss.
 import { pythonURI } from '{{ site.baseurl }}/assets/js/api/config.js';
@@ -17,13 +17,20 @@ function currentKit() {
 
 /** Show the Business home for the Business kit, the standard home for any other. */
 function chooseHome() {
+    const home = $('#home-business');
+    if (home && home.hasAttribute('data-forced')) {         // the page at /business/ always shows the Business site
+        home.hidden = false;
+        document.documentElement.setAttribute('data-brand-home', '');
+        return;
+    }
     const kit = currentKit();
     if (!kit) return;
     const business = kit === KIT;
-    const home = $('#home-business');
     const standard = $('#home-default');
+    const chooser = $('#home-kits');
     if (home) home.hidden = !business;
     if (standard) standard.hidden = business;
+    if (chooser) chooser.hidden = business;
     document.documentElement.toggleAttribute('data-brand-home', business);
 }
 

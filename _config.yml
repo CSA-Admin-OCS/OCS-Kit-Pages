@@ -40,13 +40,13 @@ kit:
   #   name: vanilla    baseline site, safe to hand to students (core only)
   #   name: education  classroom: lessons, code runners, assignments, games, AI, ...
   #   name: business   organizations: AI chatbot, social, calendar, analytics, resume
-  name: business
+  name: vanilla
   # features: [] uses the preset as is. Otherwise:
   #   ["+finance-sim", "-social"]     add/remove features relative to the preset
   #   ["lessons", "code-runner"]      explicit list (core is always on)
   #   ["*"]                           every feature
   # See what a setting does before building: python scripts/apply_kit.py --list
-  features: []
+  features: ["+ai-chatbot", "+social", "+calendar", "+analytics", "+resume"]   # Vanilla plus the Business features, so the Business page at /business/ shows all of them
   # Which pages this build contains:
   #   all  every feature's pages ship and the browser shows or hides them from the backends'
   #        live state, so an Admin can switch kits and features from the website with no rebuild.

@@ -6,6 +6,7 @@ show_reading_time: false
 ---
 {% assign build_kit = site.data.kit.kit | default: site.kit.name %}
 {% include business-home.html %}
+{% unless build_kit == "business" %}{% include kit-chooser.html %}{% endunless %}
 
 <div id="home-default" markdown="1"{% if build_kit == "business" %} hidden{% endif %}>
 

@@ -7,7 +7,7 @@ show_reading_time: false
 {% assign build_kit = site.data.kit.kit | default: site.kit.name %}
 {% include business-home.html %}
 
-<div id="home-default" markdown="1"{% if build_kit == "business" %} style="display: none"{% endif %}>
+<div id="home-default" markdown="1"{% if build_kit == "business" %} hidden{% endif %}>
 
 Hi! My name is [Your Full Name]
 

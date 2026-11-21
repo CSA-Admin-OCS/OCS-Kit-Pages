@@ -1,0 +1,454 @@
+// Business kit home page: an unbranded pearlescent glass landing page.
+// Palette, spacing and motion are SASS variables and maps; the palette is also published as CSS
+// custom properties on .ocs__pearl so it can be tuned without recompiling.
+
+// ---------------------------------------------------------------- palette
+$bg: (
+  "lavender": #eceaf6,
+  "ice":      #dfeaf7,
+  "silver":   #f6f7fb,
+  "cream":    #fbe9de,
+  "frost":    #eef0f7
+);
+$holo: (
+  "aqua":  #7fe6ee,
+  "cyan":  #a8ecf5,
+  "lilac": #bba7f6,
+  "pink":  #f7b3d4,
+  "gold":  #f6e4ae,
+  "blue":  #7ba4ff
+);
+$ink: #1c1d22;          // text on light areas
+$ink-muted: #565a67;    // secondary text (contrast 5:1 or better on the pearl background)
+$line: rgba(28, 29, 34, 0.14);
+
+$radius: 24px;
+$ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+$mobile: 760px;
+$tablet: 1080px;
+
+@function bg($key) { @return map-get($bg, $key); }
+@function holo($key) { @return map-get($holo, $key); }
+
+@mixin mobile { @media (max-width: #{$mobile}) { @content; } }
+@mixin tablet { @media (max-width: #{$tablet}) { @content; } }
+@mixin motion-ok { @media (prefers-reduced-motion: no-preference) { @content; } }
+
+@mixin glass($alpha: 0.5, $blur: 18px) {
+  background: linear-gradient(145deg, rgba(255, 255, 255, $alpha + 0.2), rgba(255, 255, 255, $alpha - 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(#{$blur}) saturate(140%);
+  backdrop-filter: blur(#{$blur}) saturate(140%);
+  box-shadow: 0 24px 60px -28px rgba(80, 90, 140, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@mixin soft($props...) {
+  $list: ();
+  @each $p in $props { $list: append($list, $p 0.45s $ease, comma); }
+  transition: $list;
+}
+
+@mixin eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: $ink-muted;
+  margin: 0 0 1.1rem;
+}
+
+// ---------------------------------------------------------------- page chrome (only on this home)
+html[data-brand-home] {
+  &, body { overflow-x: clip; }                           // 100vw includes the scrollbar; never scroll sideways
+  body {
+    background:
+      radial-gradient(60% 40% at 15% 0%, rgba(187, 167, 246, 0.22), transparent 70%),
+      radial-gradient(50% 40% at 100% 20%, rgba(168, 236, 245, 0.3), transparent 70%),
+      linear-gradient(180deg, bg("frost"), bg("silver"));
+  }
+  .post-header { display: none; }                       // the page title ("Portfolio Home")
+  .site-header { display: none; }                         // the card carries the only navigation
+}
+#home-default[hidden] { display: none !important; }
+
+// ---------------------------------------------------------------- shell
+.ocs__pearl {
+  @each $k, $v in $bg { --pearl-bg-#{$k}: #{$v}; }
+  @each $k, $v in $holo { --pearl-holo-#{$k}: #{$v}; }
+  --pearl-ink: #{$ink};
+  --pearl-muted: #{$ink-muted};
+
+  position: relative;
+  color: $ink;
+  font-family: Inter, "Helvetica Neue", "Neue Montreal", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 300;
+  // Break out of the page's own content column so the home page spans the whole window.
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 1.5rem clamp(1rem, 3vw, 3rem) 4rem;
+  @include mobile { padding: 0.75rem 0.75rem 3rem; }
+
+  &[hidden], [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  h1, h2, h3 { margin: 0; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 2px solid holo("blue"); outline-offset: 3px; border-radius: 6px; }
+
+  // fade and slide in on load
+  @include motion-ok {
+    .ocs__pearl-copy > *, .ocs__pearl-nav { animation: pearl-rise 0.9s $ease both; }
+    .ocs__pearl-copy > :nth-child(2) { animation-delay: 0.08s; }
+    .ocs__pearl-copy > :nth-child(3) { animation-delay: 0.16s; }
+    .ocs__pearl-copy > :nth-child(4) { animation-delay: 0.24s; }
+  }
+}
+
+// ---------------------------------------------------------------- hero card
+.ocs__pearl-hero {
+  position: relative;
+  min-height: 86vh;
+  max-width: 1720px;
+  margin: 0 auto;
+  border-radius: $radius;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 36rem) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  padding: 1.6rem 2.4rem 3rem;
+  background:
+    radial-gradient(55% 60% at 85% 85%, rgba(251, 233, 222, 0.95), transparent 70%),
+    radial-gradient(60% 55% at 10% 10%, rgba(223, 234, 247, 0.95), transparent 70%),
+    radial-gradient(50% 50% at 60% 30%, rgba(236, 234, 246, 0.9), transparent 75%),
+    linear-gradient(160deg, bg("lavender"), bg("ice") 45%, bg("silver"));
+  box-shadow: 0 50px 110px -40px rgba(70, 80, 130, 0.5), 0 18px 40px -22px rgba(70, 80, 130, 0.35);
+  @include tablet { grid-template-columns: minmax(0, 1fr); min-height: 78vh; padding: 1.2rem 1.4rem 2.5rem; }
+  &::after {                                              // the card's edge, above the art
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+}
+
+.ocs__pearl-grain {
+  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+// ---------------------------------------------------------------- navigation
+.ocs__pearl-nav {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba($ink, 0.78);
+  @include mobile { gap: 0.75rem; letter-spacing: 0.14em; }
+}
+.ocs__pearl-brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  @include mobile { letter-spacing: 0.14em; }
+}
+.ocs__pearl-logo { height: 22px; width: auto; border-radius: 4px; }
+.ocs__pearl-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: conic-gradient(holo("aqua"), holo("lilac"), holo("pink"), holo("gold"), holo("aqua"));
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+.ocs__pearl-links {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 2.6vw, 2.4rem);
+  a { @include soft(opacity, color); opacity: 0.8; &:hover { opacity: 1; color: $ink; } }
+  @include tablet { display: none; }
+}
+.ocs__pearl-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  @include mobile { gap: 0.8rem; .ocs__pearl-textlink { display: none; } .ocs__pearl-outline { padding: 0.6rem 1rem; } }
+}
+.ocs__pearl-textlink {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  @include soft(opacity);
+  opacity: 0.85;
+  &:hover { opacity: 1; }
+}
+.ocs__pearl-outline {
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid rgba($ink, 0.28);
+  background: rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  @include soft(transform, box-shadow, background);
+  &:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.55); box-shadow: 0 10px 28px -10px rgba(123, 164, 255, 0.6); }
+}
+
+// ---------------------------------------------------------------- copy
+.ocs__pearl-copy {
+  position: relative;
+  z-index: 6;
+  align-self: center;
+  max-width: 34rem;
+  padding: 3rem 0;
+  @include tablet { max-width: none; align-self: start; padding: 2.5rem 0 1rem; }
+  &::before {                                             // a soft frosted wash, so the ripples never cost the text its contrast
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -2rem -3rem -2rem -3rem;
+    border-radius: 40px;
+    background: radial-gradient(closest-side, rgba(246, 247, 252, 0.82), rgba(246, 247, 252, 0.55) 60%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent);
+    mask-image: radial-gradient(closest-side, #000 55%, transparent);
+  }
+}
+.ocs__pearl-eyebrow { @include eyebrow; }
+.ocs__pearl-title {
+  font-size: #{"clamp(1.7rem, 1.1rem + 1.4vw, 2.4rem)"};   // quoted so libsass leaves the mixed units alone
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  max-width: 34rem;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: balance;
+}
+.ocs__pearl-body {
+  margin: 1.1rem 0 0;
+  max-width: 24rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: $ink-muted;
+}
+.ocs__pearl-cta-row { margin-top: 2rem; display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
+.ocs__pearl-cta {
+  display: inline-block;
+  padding: 0.95rem 1.9rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, #f3f4f9);
+  color: $ink;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  box-shadow: 0 14px 30px -14px rgba(70, 80, 130, 0.55), inset 0 1px 0 #fff;
+  @include soft(transform, box-shadow);
+  &:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -14px rgba(123, 164, 255, 0.6), 0 0 0 4px rgba(168, 236, 245, 0.35), inset 0 1px 0 #fff; }
+}
+
+// ---------------------------------------------------------------- art (a WebGL canvas, see business-hero/)
+@mixin edge-fade($x: 9%, $y: 10%) {
+  $mask: linear-gradient(to right, transparent, #000 $x, #000 (100% - $x), transparent),
+         linear-gradient(to bottom, transparent, #000 $y, #000 (100% - $y), transparent);
+  -webkit-mask-image: $mask;
+  mask-image: $mask;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.ocs__pearl-art {
+  position: absolute;
+  z-index: 1;
+  inset: -9% -6% -13% -6%;                // larger than the card, so the ripples carry on past its edges
+  pointer-events: none;
+  @include edge-fade;
+  canvas { display: block; width: 100%; height: 100%; }
+  // shown only until the canvas is ready, or when WebGL is not available
+  background:
+    radial-gradient(45% 50% at 72% 55%, rgba(168, 236, 245, 0.55), transparent 70%),
+    radial-gradient(40% 45% at 60% 80%, rgba(247, 179, 212, 0.35), transparent 70%),
+    radial-gradient(35% 40% at 80% 30%, rgba(246, 228, 174, 0.35), transparent 70%);
+  &.is-3d { background: none; }
+  @include tablet { inset: 38% -4% -10% -4%; }
+  @include mobile { inset: 46% -4% -8% -4%; }
+}
+.ocs__pearl-photo {
+  position: absolute;
+  z-index: 2;
+  right: 6%;
+  bottom: 8%;
+  width: 52%;
+  height: 74%;
+  object-fit: cover;
+  border-radius: $radius;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 40px 90px -30px rgba(70, 80, 130, 0.55);
+  @include tablet { right: 5%; width: 90%; height: 52%; bottom: 5%; }
+}
+
+// ---------------------------------------------------------------- side indicators
+.ocs__pearl-number {
+  position: absolute;
+  left: 2.4rem;
+  bottom: 1.2rem;
+  z-index: 6;
+  font-size: 5.5rem;
+  font-weight: 200;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba($ink, 0.14);
+  @include mobile { display: none; }
+}
+.ocs__pearl-arrows {
+  position: absolute;
+  right: 2.4rem;
+  bottom: 1.6rem;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  span { width: 4px; height: 4px; border-radius: 50%; background: rgba($ink, 0.35); }
+  button {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba($ink, 0.22);
+    background: rgba(255, 255, 255, 0.35);
+    color: $ink; font-size: 12px; line-height: 1; cursor: pointer;
+    @include soft(transform, background);
+    &:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.8); }
+  }
+  @include mobile { display: none; }
+}
+.ocs__pearl-dots {
+  position: fixed;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: grid;
+  gap: 0.9rem;
+  a {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba($ink, 0.3);
+    @include soft(transform, background, box-shadow);
+    &[aria-current="true"] { transform: scale(1.5); background: $ink; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.7); }
+  }
+  @include tablet { display: none; }
+}
+.ocs__pearl-ticks {
+  position: fixed;
+  right: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: grid;
+  gap: 7px;
+  justify-items: end;
+  span { display: block; width: 10px; height: 1px; background: rgba($ink, 0.28); @include soft(width, background); }
+  span.is-active { width: 22px; background: $ink; }
+  @include tablet { display: none; }
+}
+
+// ---------------------------------------------------------------- following sections
+.ocs__pearl-section { max-width: 1480px; margin: 0 auto; padding: 6rem 1rem 1rem; @include mobile { padding: 4rem 0.5rem 0.5rem; } }
+.ocs__pearl-heading {
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  max-width: 28rem;
+}
+.ocs__pearl-grid {
+  margin-top: 2.4rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem;
+  @include tablet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @include mobile { grid-template-columns: 1fr; }
+}
+.ocs__pearl-card {
+  @include glass(0.5);
+  position: relative;
+  border-radius: $radius;
+  padding: 1.6rem 1.5rem;
+  @include soft(transform, box-shadow);
+  &:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -26px rgba(123, 164, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.8); }
+  h3 { font-size: 1.05rem; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+  p { margin: 0; font-size: 0.9rem; line-height: 1.6; color: $ink-muted; }
+  a {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding-bottom: 2px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 1px solid $line;
+    @include soft(border-color);
+    &:hover { border-color: holo("blue"); }
+  }
+  &::before {                                              // a hairline of iridescence, in small doses
+    content: "";
+    position: absolute;
+    left: 1.5rem; right: 1.5rem; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, holo("aqua"), holo("lilac"), holo("pink"), transparent);
+    opacity: 0.8;
+  }
+}
+.ocs__pearl-card .ocs__pearl-label { @include eyebrow; margin: 0 0 0.7rem; font-size: 10px; }
+.ocs__pearl-section--end { padding-bottom: 2rem; }
+.ocs__pearl-panel {
+  @include glass(0.55, 24px);
+  border-radius: $radius;
+  padding: 3rem 2.6rem;
+  max-width: 44rem;
+  margin: 0 auto;
+  text-align: center;
+  .ocs__pearl-body, .ocs__pearl-heading { margin-left: auto; margin-right: auto; }
+  .ocs__pearl-cta-row { justify-content: center; }
+  @include mobile { padding: 2.2rem 1.4rem; }
+}
+
+// ---------------------------------------------------------------- motion
+@keyframes pearl-rise { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
+@keyframes pearl-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1.2deg); }
+  50% { transform: translate3d(0, -18px, 0) rotate(1.4deg); }
+}
+@keyframes pearl-drift { from { transform: translate3d(-4%, 0, 0) scale(1); } to { transform: translate3d(5%, -4%, 0) scale(1.08); } }
+@keyframes pearl-pulse {
+  0% { transform: scale(0.35); opacity: 0.7; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ocs__pearl *, .ocs__pearl *::before, .ocs__pearl *::after { animation: none !important; transition: none !important; }
+}

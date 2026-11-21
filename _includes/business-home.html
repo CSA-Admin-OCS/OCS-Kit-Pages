@@ -1,40 +1,111 @@
 {%- comment -%}
-  Home page of the Business kit: unbranded until an Admin sets a name, logo and welcome text
-  (Admin > Branding). Every [data-brand] element holds a placeholder that assets/js/business-home.js
-  replaces with the saved value. Built from the shared ocs__ grammar only.
+  Home page of the Business kit: an unbranded pearlescent landing page. The name, tagline, welcome
+  text, logo and hero image are placeholders until an Admin fills them in (Admin > Branding);
+  assets/js/business-home.js swaps in the saved values. Styles: _sass/open-coding/business-home.scss.
+  The hero art is a real-time WebGL scene (glass finger touching water) started by assets/js/business-home.js
+  from assets/js/vendor/pearl-hero.js; its source is in assets/js/business-hero/.
 {%- endcomment -%}
-<div class="ocs__container" id="home-business"{% unless build_kit == "business" %} style="display: none"{% endunless %}>
-  <div class="ocs__card">
-    <div class="ocs__badge" data-brand-placeholder="logo">Your logo</div>
-    <img class="ocs__image-frame ocs__image-frame--thumbnail" data-brand="logo" alt="" style="display: none">
-    <h1 data-brand="name">Your Company</h1>
-    <p class="ocs__lead" data-brand="tagline">Your tagline goes here</p>
-    <div class="ocs__links">
-      <a class="ocs__btn alert-green fill" href="{{ site.baseurl }}/login">Sign in</a>
-      <a class="ocs__btn" href="{{ site.baseurl }}/signup">Create an account</a>
-      <a class="ocs__btn accent" href="{{ site.baseurl }}/admin/brand/" data-feature-admin hidden>Brand this site</a>
-    </div>
-  </div>
+<link rel="stylesheet" href="{{ '/assets/css/business-home.css' | relative_url }}">
+<div class="ocs__pearl" id="home-business"{% unless build_kit == "business" %} hidden{% endunless %}>
 
-  <div class="ocs__card">
-    <img class="ocs__image-frame" data-brand="hero_image" alt="" style="display: none">
-    <div class="ocs__callout" data-brand-placeholder="hero_image">Your hero image goes here. Admins can add one in Admin &gt; Branding.</div>
-    <p data-brand="hero_text">Add a short welcome message for your visitors.</p>
-  </div>
+  <nav class="ocs__pearl-dots" aria-label="Page sections">
+    <a href="#top" data-pearl-dot aria-label="Overview" aria-current="true"></a>
+    <a href="#features" data-pearl-dot aria-label="Features"></a>
+    <a href="#start" data-pearl-dot aria-label="Get started"></a>
+  </nav>
+  <div class="ocs__pearl-ticks" data-pearl-ticks aria-hidden="true"></div>
 
-  <div class="ocs__card">
-    <h2 class="ocs__section-title">What is on this site</h2>
-    <div class="ocs__hub-grid">
-      <a class="ocs__hub-card" href="{{ site.baseurl }}/profile"><span class="ocs__nav-card-kicker">Account</span><span class="ocs__hub-card-title">Profile</span><p>Your account and details.</p></a>
-      <a class="ocs__hub-card" href="{{ site.baseurl }}/student/calendar" data-feature="calendar"><span class="ocs__nav-card-kicker">Plan</span><span class="ocs__hub-card-title">Calendar</span><p>Dates and schedules for your people.</p></a>
-      <a class="ocs__hub-card" href="{{ site.baseurl }}/analytics-dashboard" data-feature="analytics"><span class="ocs__nav-card-kicker">Measure</span><span class="ocs__hub-card-title">Analytics</span><p>Usage and activity across the site.</p></a>
+  <section class="ocs__pearl-hero" id="top" data-pearl-section>
+    <div class="ocs__pearl-grain" aria-hidden="true"></div>
+
+    <header class="ocs__pearl-nav">
+      <a class="ocs__pearl-brand" href="#top">
+        <img class="ocs__pearl-logo" data-brand="logo" alt="" hidden>
+        <span data-brand-placeholder="logo" class="ocs__pearl-mark" aria-hidden="true"></span>
+        <span data-brand="name">Your Organization</span>
+      </a>
+      <div class="ocs__pearl-links">
+        <a href="#top">Overview</a>
+        <a href="#features">Features</a>
+        <a href="{{ site.baseurl }}/student/calendar" data-feature="calendar">Schedule</a>
+        <a href="{{ site.baseurl }}/analytics-dashboard" data-feature="analytics">Insights</a>
+      </div>
+      <div class="ocs__pearl-actions">
+        <a class="ocs__pearl-textlink" href="{{ site.baseurl }}/login" data-pearl-signin>Sign in</a>
+        <a class="ocs__pearl-outline" href="{{ site.baseurl }}/signup" data-pearl-signup>Get started</a>
+      </div>
+    </header>
+
+    <div class="ocs__pearl-copy">
+      <p class="ocs__pearl-eyebrow">Welcome</p>
+      <h1 class="ocs__pearl-title" data-brand="tagline">One calm place<br>for everything you run.</h1>
+      <p class="ocs__pearl-body" data-brand="hero_text">Chat, calendar, analytics and an AI assistant, ready the moment you sign in.</p>
+      <div class="ocs__pearl-cta-row">
+        <a class="ocs__pearl-cta" href="{{ site.baseurl }}/login" data-pearl-signin>Sign in</a>
+        <a class="ocs__pearl-textlink" href="{{ site.baseurl }}/admin/brand/" data-feature-admin hidden>Brand this site</a>
+      </div>
     </div>
-    <div class="ocs__links">
-      <span class="ocs__status-pill ocs__status-pill--good" data-feature="ai-chatbot">AI chatbot</span>
-      <span class="ocs__status-pill ocs__status-pill--good" data-feature="social">Chat and posts</span>
-      <span class="ocs__status-pill ocs__status-pill--good" data-feature="resume">Resumes and profiles</span>
-      <span class="ocs__status-pill ocs__status-pill--good" data-feature="calendar">Calendar</span>
-      <span class="ocs__status-pill ocs__status-pill--good" data-feature="analytics">Analytics</span>
+
+    <div class="ocs__pearl-art" data-pearl-art data-brand-placeholder="hero_image" aria-hidden="true"></div>
+    <img class="ocs__pearl-photo" data-brand="hero_image" alt="" hidden>
+
+    <span class="ocs__pearl-number" aria-hidden="true" data-pearl-number>01</span>
+    <div class="ocs__pearl-arrows">
+      <button type="button" data-pearl-prev aria-label="Previous section">&#8593;</button>
+      <span aria-hidden="true"></span>
+      <button type="button" data-pearl-next aria-label="Next section">&#8595;</button>
     </div>
-  </div>
+  </section>
+
+  <section class="ocs__pearl-section" id="features" data-pearl-section>
+    <p class="ocs__pearl-eyebrow">Features</p>
+    <h2 class="ocs__pearl-heading">Everything is already here.</h2>
+    <div class="ocs__pearl-grid">
+      <article class="ocs__pearl-card">
+        <p class="ocs__pearl-label">Account</p>
+        <h3>Profile</h3>
+        <p>Your details and sign-in, in one place.</p>
+        <a href="{{ site.baseurl }}/profile">Open</a>
+      </article>
+      <article class="ocs__pearl-card" data-feature="calendar">
+        <p class="ocs__pearl-label">Plan</p>
+        <h3>Calendar</h3>
+        <p>Dates and schedules for everyone you work with.</p>
+        <a href="{{ site.baseurl }}/student/calendar" data-feature="calendar">Open</a>
+      </article>
+      <article class="ocs__pearl-card" data-feature="analytics">
+        <p class="ocs__pearl-label">Measure</p>
+        <h3>Analytics</h3>
+        <p>See how the site is used, at a glance.</p>
+        <a href="{{ site.baseurl }}/analytics-dashboard" data-feature="analytics">Open</a>
+      </article>
+      <article class="ocs__pearl-card" data-feature="ai-chatbot">
+        <p class="ocs__pearl-label">Assist</p>
+        <h3>AI assistant</h3>
+        <p>Quiet help whenever someone needs an answer.</p>
+      </article>
+      <article class="ocs__pearl-card" data-feature="social">
+        <p class="ocs__pearl-label">Connect</p>
+        <h3>Chat and posts</h3>
+        <p>Share updates and talk with your team.</p>
+      </article>
+      <article class="ocs__pearl-card" data-feature="resume">
+        <p class="ocs__pearl-label">Present</p>
+        <h3>Resumes and profiles</h3>
+        <p>A tidy page for every member.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="ocs__pearl-section ocs__pearl-section--end" id="start" data-pearl-section>
+    <div class="ocs__pearl-panel">
+      <p class="ocs__pearl-eyebrow">Get started</p>
+      <h2 class="ocs__pearl-heading">Make it yours.</h2>
+      <p class="ocs__pearl-body">Sign in to set up your organization. Add your name, logo and welcome text whenever you are ready.</p>
+      <div class="ocs__pearl-cta-row">
+        <a class="ocs__pearl-cta" href="{{ site.baseurl }}/signup">Create an account</a>
+        <a class="ocs__pearl-textlink" href="{{ site.baseurl }}/login">Sign in</a>
+      </div>
+    </div>
+  </section>
 </div>

@@ -1,6 +1,6 @@
 # Business home hero (WebGL)
 
-`pearl-hero.src.js` is the source of the hero: a pool of still pearl water that ripples under the cursor, with a
+`pearl-hero.src.js` is the source of the hero: one window-sized pool, held in place behind the whole page while it scrolls, of still pearl water that ripples under the cursor, with a
 steady train of rings spreading from a trembling point when the cursor is away. The water is a GPU height-field
 simulation (a wave equation run on a float texture at a fixed 120 Hz); the cursor writes a continuous wake into it
 through a frame-rate independent smoothing. `../vendor/pearl-hero.js` is the same code bundled with three.js into one

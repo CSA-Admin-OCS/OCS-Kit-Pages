@@ -2,11 +2,14 @@
   Home page of the Business kit: an unbranded pearlescent landing page. The name, tagline, welcome
   text, logo and hero image are placeholders until an Admin fills them in (Admin > Branding);
   assets/js/business-home.js swaps in the saved values. Styles: _sass/open-coding/business-home.scss.
-  The hero art is a real-time WebGL scene (pearl water that ripples under the cursor) started by assets/js/business-home.js
+  The hero art is a real-time WebGL scene (pearl water that ripples under the cursor, filling the whole page behind the content) started by assets/js/business-home.js
   from assets/js/vendor/pearl-hero.js; its source is in assets/js/business-hero/.
 {%- endcomment -%}
 <link rel="stylesheet" href="{{ '/assets/css/business-home.css' | relative_url }}">
 <div class="ocs__pearl" id="home-business"{% unless build_kit == "business" %} hidden{% endunless %}>
+
+  {%- comment -%} The water: a layer as tall as the whole page, holding one window-sized stage that stays put while you scroll. {%- endcomment %}
+  <div class="ocs__pearl-water" aria-hidden="true"><div class="ocs__pearl-art" data-pearl-art></div></div>
 
   <nav class="ocs__pearl-dots" aria-label="Page sections">
     <a href="#top" data-pearl-dot aria-label="Overview" aria-current="true"></a>
@@ -16,8 +19,6 @@
   <div class="ocs__pearl-ticks" data-pearl-ticks aria-hidden="true"></div>
 
   <section class="ocs__pearl-hero" id="top" data-pearl-section>
-    <div class="ocs__pearl-grain" aria-hidden="true"></div>
-
     <header class="ocs__pearl-nav">
       <a class="ocs__pearl-brand" href="#top">
         <img class="ocs__pearl-logo" data-brand="logo" alt="" hidden>
@@ -46,7 +47,6 @@
       </div>
     </div>
 
-    <div class="ocs__pearl-art" data-pearl-art data-brand-placeholder="hero_image" aria-hidden="true"></div>
     <img class="ocs__pearl-photo" data-brand="hero_image" alt="" hidden>
 
     <span class="ocs__pearl-number" aria-hidden="true" data-pearl-number>01</span>

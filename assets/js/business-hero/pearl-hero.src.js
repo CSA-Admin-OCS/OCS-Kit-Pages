@@ -28,7 +28,7 @@ const REST_NDC = new THREE.Vector2(0.30, -0.21);       // where the water is sti
 const REACH = { x0: -1, x1: 1, y0: -1, y1: 1 };               // the cursor reaches the whole hero
 const SIM_STEP = 1 / 120;                              // fixed simulation step
 const SIM_SPEED = 0.2;                                 // wave speed squared, in texels per step
-const SIM_DAMPING = 0.990;
+const SIM_DAMPING = 0.972;
 
 // ------------------------------------------------------------------------------------------ simulation shaders
 

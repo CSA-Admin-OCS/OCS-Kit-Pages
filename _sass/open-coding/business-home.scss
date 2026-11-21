@@ -229,17 +229,13 @@ html[data-brand-home] {
   max-width: 34rem;
   padding: 3rem 0;
   @include tablet { max-width: none; align-self: start; padding: 2.5rem 0 1rem; }
-  &::before {                                             // a soft frosted wash, so the ripples never cost the text its contrast
+  &::before {                                             // a faint tint, no blur, so the ripples show through and the text still reads
     content: "";
     position: absolute;
     z-index: -1;
-    inset: -2rem -3rem -2rem -3rem;
+    inset: -2rem -3rem;
     border-radius: 40px;
-    background: radial-gradient(closest-side, rgba(246, 247, 252, 0.82), rgba(246, 247, 252, 0.55) 60%, transparent);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent);
-    mask-image: radial-gradient(closest-side, #000 55%, transparent);
+    background: radial-gradient(closest-side, rgba(246, 247, 252, 0.38), rgba(246, 247, 252, 0.18) 60%, transparent);
   }
 }
 .ocs__pearl-eyebrow { @include eyebrow; }

@@ -4100,10 +4100,8 @@ void main() {
     vec2 g = vec2((hR - hL) * 0.5 + (hR2 - hL2) * 0.125, (hU - hD) * 0.5 + (hU2 - hD2) * 0.125);
     vec2 slope = g / (e * 28.0) * 1.1;                      // height units per world unit
 
-    // keep the water calmer on the left, behind the headline
-    float calmLeft = mix(0.30, 1.0, smoothstep(0.12, 0.52, screen.x));
     float camDist = length(uCamera - vWorld);
-    float calm = exp(-camDist / 30.0) * calmLeft;
+    float calm = exp(-camDist / 30.0);                       // the same everywhere across the hero, text or not
     slope = clamp(slope * calm, vec2(-0.55), vec2(0.55));
 
     vec2 tq = p - uTip;

@@ -23,6 +23,6 @@ NODE_PATH=$PWD/node_modules ./node_modules/.bin/esbuild /path/to/assets/js/busin
 - Water simulation: `SIM_SPEED`, `SIM_DAMPING`, `SIM_STEP`, and the trembling source in `update()`.
 - Cursor wake: the `splat()` call in `update()` (radius and strength grow with speed; slow drift adds nothing).
 - Where the water rests when the cursor is away: `REST_NDC`. How far the cursor reaches: `REACH` (the whole hero).
-- Water shading: `WATER_FRAG` (ripple strength, palette, caustics, the calmer zone behind the headline).
+- Water shading: `WATER_FRAG` (ripple strength, palette, caustics,).
 - Quality: phones get a smaller simulation and no bloom; reduced motion and low-power devices get one still frame;
   the resolution drops automatically if frames run slow.

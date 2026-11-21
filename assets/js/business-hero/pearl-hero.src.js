@@ -415,10 +415,10 @@ export function startPearlHero(host, options = {}) {
     // small gentle rings, fast movement makes bigger waves.
     const moved = prevTip.distanceTo(tipWorld);
     if (moved > 1e-4) {
-      splat(prevTip.x, prevTip.z, tipWorld.x, tipWorld.z, 0.30 + Math.min(speed * 0.012, 0.35), Math.min(Math.max(speed - 0.6, 0) * 0.8 * dt, 0.20));      // slow drift adds nothing; real movement adds waves
+      splat(prevTip.x, prevTip.z, tipWorld.x, tipWorld.z, 0.15 + Math.min(speed * 0.004, 0.10), Math.min(Math.max(speed - 0.6, 0) * 0.6 * dt, 0.10));      // slow drift adds nothing; real movement adds waves
     }
     // the stirred point trembles very slightly, sending a steady train of concentric rings outward, so the water is never still
-    splat(tipWorld.x, tipWorld.z, tipWorld.x, tipWorld.z, 0.40, Math.sin(elapsed * 15.0) * 0.55 * dt);
+    splat(tipWorld.x, tipWorld.z, tipWorld.x, tipWorld.z, 0.22, Math.sin(elapsed * 15.0) * 0.40 * dt);
 
     // fixed-step simulation, so the water behaves the same at any refresh rate
     accumulator = Math.min(accumulator + dt, SIM_STEP * 5);
